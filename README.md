@@ -58,6 +58,14 @@ mkdir lerobot_datasets && cd lerobot_datasets
 git clone https://huggingface.co/datasets/unitreerobotics/UnitreeG1_DualArmGrasping
 ```
 
+**Note:** If a download issue occurs, you may need to install git-lfs. The installation command is as follows:
+
+```
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install git-lfs
+git lfs install
+```
+
 The storage directory structure of the downloaded data is as follows:
 
     lerobot_datasets
