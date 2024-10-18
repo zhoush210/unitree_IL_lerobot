@@ -30,7 +30,7 @@ from lerobot.common.datasets.video_utils import VideoFrame, encode_video_frames
 json_file = 'data.json'
 
 def check_format(raw_dir) -> bool:
-    task_paths, episode_paths = get_all_json(raw_dir)
+    episode_paths = get_all_json(raw_dir)
     episode_paths = sorted(episode_paths, key=lambda path: int(re.search(r'(\d+)$', path).group(1)) if re.search(r'(\d+)$', path) else 0)
     assert len(episode_paths) != 0
     
@@ -54,16 +54,22 @@ def get_cameras(json_data):
     rgb_cameras = [key for key in keys if "depth" not in key]  # noqa: SIM118
     return rgb_cameras
 
-def get_all_json(data_dir):
-    task_paths = []
-    episode_paths = []
-    for task_path in glob.glob(os.path.join(data_dir, '*')):
-        temepisode_paths = glob.glob(os.path.join(task_path, '*'))
-        if os.path.isdir(task_path) and len(temepisode_paths) > 0:
-            task_paths.append(task_path)
-            episode_paths.extend(temepisode_paths)
-    return task_paths,episode_paths
+# def get_all_json(data_dir):
+#     task_paths = []
+#     episode_paths = []
+#     for task_path in glob.glob(os.path.join(data_dir, '*')):
+#         temepisode_paths = glob.glob(os.path.join(task_path, '*'))
+#         if os.path.isdir(task_path) and len(temepisode_paths) > 0:
+#             task_paths.append(task_path)
+#             episode_paths.extend(temepisode_paths)
+#     return task_paths,episode_paths
 
+def get_all_json(data_dir):
+    episode_paths = []
+    temepisode_paths = glob.glob(os.path.join(data_dir, '*'))
+    if os.path.isdir(data_dir) and len(temepisode_paths) > 0:
+        episode_paths.extend(temepisode_paths)
+    return episode_paths
 
 # def get_all_json(data_dir):
 #     task_paths = []
@@ -202,7 +208,7 @@ def load_from_raw(
     episodes: list[int] | None = None,
     encoding: dict | None = None,
 ):
-    task_paths, episode_paths = get_all_json(raw_dir)
+    episode_paths = get_all_json(raw_dir)
        
     episode_paths = sorted(episode_paths, key=lambda path: int(re.search(r'(\d+)$', path).group(1)) if re.search(r'(\d+)$', path) else 0)
     num_episodes = len(episode_paths)

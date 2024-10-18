@@ -157,7 +157,7 @@ python unitree_utils/sort_and_rename_folders.py --data_dir 'xxx/data/task'
 python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
-### 在 Lerobot 源码中添加转换工具[可选]
+### 在 Lerobot 源码中添加数据转换工具[可选]
 
 **注意:** 如果使用我们项目中的 LeRobot，可以省略以下步骤直接进行转换
 
@@ -179,16 +179,11 @@ python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_gra
 ### 进行转换
 
 ```
-python lerobot/scripts/push_dataset_to_hub.py --raw-dir data/ --raw-format unitree_json  --push-to-hub 0 --repo-id lerbot/task --local-dir xxx/videos
+cd  unitree_il_lerobot/lerobot
+python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/g1_grabcube_double_hand --raw-format unitree_json  --push-to-hub 0 --repo-id unitree/UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
 ```
 
-使用案例:
-
-```
-python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/ --raw-format unitree_json  --push-to-hub 0 --repo-id UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
-```
-
-转换后的数据会存放在 --local-dir 中。
+**注意:** 转换后的数据会存放在 --local-dir 中,--repo-id 可根据自己需求填写。
 
 转换后可以参考上面描述的训练步骤进行训练和测试
 

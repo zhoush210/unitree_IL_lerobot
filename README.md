@@ -149,16 +149,11 @@ The following conversion steps use this data storage path and format as an examp
 When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the `unitree_utils/sort_and_rename_folders` tool to sort and rename the data accordingly.
 
 ```
-python unitree_utils/sort_and_rename_folders.py --data_dir 'xxx/data/task'
-```
-
-- Example Usage:
-
-```
+cd unitree_il_lerobot
 python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
-### Add Conversion Tool in Lerobot Source Code[optional]
+### Add a data conversion tool to the Lerobot source code [optional]
 
 **Notes:** If you're using LeRobot in our project, you can skip the following steps and directly perform the conversion.
 
@@ -180,16 +175,11 @@ To enable the use of `unitree_json_formats` for data conversion, you need to mod
 ### Perform the Conversion
 
 ```
-python push_dataset_to_hub.py --raw-dir data/ --raw-format unitree_json  --push-to-hub 0 --repo-id lerbot/task --local-dir xxx/videos
-```
-
-- Example Usage:
-
-```
+cd unitree_il_lerobot/lerobot
 python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/ --raw-format unitree_json  --push-to-hub 0 --repo-id UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
 ```
 
-The converted data will be stored in the directory specified by `--local-dir`.
+**Note:** The converted data will be stored in the `--local-dir`, and `--repo-id` can be filled in according to your needs.
 
 After the conversion, you can refer to the training steps described above for training and testing.
 
