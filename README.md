@@ -37,7 +37,7 @@ pip install -e .
 
 **NOTE:** Depending on your platform, If you encounter any build errors during this step you may need to install `cmake` and `build-essential` for building some of our dependencies. On linux: `sudo apt-get install cmake build-essential`
 
-## Robot Control Environment Setup[Optional, requires installation for real machine verification]
+## Robot Control Environment Setup[Optional, requires installation for real robot testing]
 
 To control the Unitree robot, some dependencies need to be installed. The installation steps are as follows:
 
@@ -95,18 +95,16 @@ export DATA_DIR="$HOME/lerobot_datasets/"
 cd unitree_il_lerobot/lerobot
 ```
 
-### Example Use Cases:
-
 - Training Diffusion Policy:
 
 ```
-python lerobot/scripts/train.py    policy=diffusion_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=unitree/g1_grabcube_double_hand
+python lerobot/scripts/train.py    policy=diffusion_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=UnitreeG1_DualArmGrasping
 ```
 
 - Training ACT:
 
 ```
-python lerobot/scripts/train.py    policy=act_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=unitree/g1_grabcube_double_hand
+python lerobot/scripts/train.py    policy=act_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=UnitreeG1_DualArmGrasping
 ```
 
 # 4. Real Robot Testing
@@ -192,6 +190,8 @@ python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/ --raw-fo
 ```
 
 The converted data will be stored in the directory specified by `--local-dir`.
+
+After the conversion, you can refer to the training steps described above for training and testing.
 
 # Acknowledgement
 

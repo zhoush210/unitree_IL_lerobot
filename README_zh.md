@@ -114,7 +114,7 @@ python lerobot/scripts/train.py    policy=act_unitree_real_g1    env=unitree_rea
 python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOME/unitree_imitation/lerobot/outputs/train/2024-10-17/19-45-30_real_world_act_default/checkpoints/100000/pretrained_modell"
 ```
 
-**注意:** `--pretrained-policy-name-or-path`根据自己训练的权重位置进行修改； 在`eval_g1.py`中的`eval_policy`函数中有`is_single_hand`变量用于控制是否使用单手或者双手的选项，为`True`是使用单手；`use_left_hand`变量是在使用单手情况下区分使用左手或者右手的，为`True`是使用左手。
+**注意:** `--pretrained-policy-name-or-path`根据自己训练的权重存放位置进行修改； 在`eval_g1.py`中的`eval_policy`函数中有`is_single_hand`变量用于控制是否使用单手或者双手的选项，为`True`是使用单手；`use_left_hand`变量是在使用单手情况下区分使用左手或者右手的，为`True`是使用左手。
 
 **特别提醒:** 如果修改了 LeRobot 的代码，最好是再次进入 `lerobot` 目录中执行`pip install -e .`。
 
@@ -189,6 +189,8 @@ python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/ --raw-fo
 ```
 
 转换后的数据会存放在 --local-dir 中。
+
+转换后可以参考上面描述的训练步骤进行训练和测试
 
 # 致谢
 
