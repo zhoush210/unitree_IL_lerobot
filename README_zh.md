@@ -2,9 +2,9 @@
 
 # 目录说明
 
-| 目录             | 说明                                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| lerobot          | lerobot 仓库代码，已修改可用于 G1 数据转换与训练；其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
+| 目录          | 说明                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| lerobot       | lerobot 仓库代码，已修改可用于 G1 数据转换与训练；其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
 | unitree_utils | unitree 机器人控制相关代码以及数据处理工具                                                                          |
 
 # 环境安装
@@ -148,12 +148,7 @@ python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOM
 生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 unitree_utils/sort_and_rename_folders 工具对数据进行排序处理
 
 ```
-python unitree_utils/sort_and_rename_folders.py --data_dir 'xxx/data/task'
-```
-
-- 使用案例:
-
-```
+cd unitree_il_lerobot
 python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
