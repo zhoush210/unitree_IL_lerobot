@@ -7,6 +7,8 @@
 | lerobot       | The code in the lerobot repository has been modified for G1 data conversion and training; its corresponding commit version number is c712d68f6a4fcb282e49185b4af46b0cee6fa5ed. |
 | unitree_utils | The code related to Unitree robot control and data processing tools.                                                                                                           |
 
+# Environment Setup
+
 ## LeRobot Environment Setup
 
 The purpose of this project is to use the [LeRobot](https://github.com/huggingface/lerobot) open-source framework to train and test data collected from Unitree robots. Therefore, it is necessary to install the LeRobot-related dependencies first. The installation steps are as follows, and you can also refer to the official [LeRobot](https://github.com/huggingface/lerobot) installation guide:

@@ -7,6 +7,8 @@
 | lerobot          | lerobot 仓库代码，已修改可用于 G1 数据转换与训练；其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
 | unitree_dl_utils | unitree 机器人控制相关代码以及数据处理工具                                                                          |
 
+# 环境安装
+
 ## LeRobot 环境安装
 
 本项的目的是使用[LeRobot](https://github.com/huggingface/lerobot)开源框架训练并测试基于 Unitree 机器人采集的数据。所以首先需要安装 LeRobot 相关依赖。安装步骤如下，也可以参考[LeRobot](https://github.com/huggingface/lerobot)官方进行安装:
