@@ -17,7 +17,13 @@
 
 ```
 cd $HOME
-git clone https://github.com/unitreerobotics/unitree_il_lerobot.git
+
+git clone git@github.com:unitreerobotics/unitree_IL_lerobot.git
+
+OR
+
+git clone https://github.com/unitreerobotics/unitree_IL_lerobot.git
+
 ```
 
 创建一个 python 为 3.10 的虚拟环境并激活
@@ -30,7 +36,7 @@ conda activate lerobot
 安装 LeRobot
 
 ```
-cd unitree_il_lerobot/lerobot
+cd unitree_IL_lerobot/lerobot
 pip install -e .
 ```
 
@@ -99,7 +105,7 @@ export DATA_DIR="$HOME/lerobot_datasets/"
 ## 运行训练
 
 ```
-cd unitree_il_lerobot/lerobot
+cd unitree_IL_lerobot/lerobot
 ```
 
 - 训练 Diffusion Policy
@@ -156,7 +162,7 @@ python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOM
 生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 unitree_utils/sort_and_rename_folders 工具对数据进行排序处理
 
 ```
-cd unitree_il_lerobot
+cd unitree_IL_lerobot
 python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
@@ -182,7 +188,7 @@ python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_gra
 ### 进行转换
 
 ```
-cd  unitree_il_lerobot/lerobot
+cd  unitree_IL_lerobot/lerobot
 python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/g1_grabcube_double_hand --raw-format unitree_json  --push-to-hub 0 --repo-id unitree/UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
 ```
 

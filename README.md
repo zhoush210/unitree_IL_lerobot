@@ -17,7 +17,12 @@ Download our source code:
 
 ```
 cd $HOME
-git clone https://github.com/unitreerobotics/unitree_il_lerobot.git
+
+git clone git@github.com:unitreerobotics/unitree_IL_lerobot.git
+
+OR
+
+git clone https://github.com/unitreerobotics/unitree_IL_lerobot.git
 
 ```
 
@@ -31,7 +36,7 @@ conda activate lerobot
 Install LeRobot:
 
 ```
-cd unitree_il_lerobot/lerobot
+cd unitree_IL_lerobot/lerobot
 pip install -e .
 ```
 
@@ -100,7 +105,7 @@ export DATA_DIR="$HOME/lerobot_datasets/"
 ## Run Training
 
 ```
-cd unitree_il_lerobot/lerobot
+cd unitree_IL_lerobot/lerobot
 ```
 
 - Training Diffusion Policy:
@@ -157,7 +162,7 @@ The following conversion steps use this data storage path and format as an examp
 When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the `unitree_utils/sort_and_rename_folders` tool to sort and rename the data accordingly.
 
 ```
-cd unitree_il_lerobot
+cd unitree_IL_lerobot
 python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
@@ -183,7 +188,7 @@ To enable the use of `unitree_json_formats` for data conversion, you need to mod
 ### Perform the Conversion
 
 ```
-cd unitree_il_lerobot/lerobot
+cd unitree_IL_lerobot/lerobot
 python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/ --raw-format unitree_json  --push-to-hub 0 --repo-id UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
 ```
 
