@@ -138,11 +138,11 @@ If you are using a Unitree robot to collect your own data and train, you can ref
 
 ## Data Collection
 
-The open-source teleoperation project [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) can be used to collect data using the Unitree G1 humanoid robot. For more details, please refer to the [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) project.
+The open-source teleoperation project [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) can be used to collect data using the Unitree G1 humanoid robot. For more details, please refer to the [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) project.
 
 ## Data Conversion
 
-The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) is stored in JSON format, with the structure as shown below. To convert the JSON format into the format required by lerobot, please follow the steps below:
+The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format, with the structure as shown below. To convert the JSON format into the format required by lerobot, please follow the steps below:
 
 The following conversion steps use this data storage path and format as an example. Assuming the collected data is stored in the `$HOME/datasets/` directory under the `g1_grabcube_double_hand` directory, the format is as follows
 

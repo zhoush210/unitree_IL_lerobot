@@ -138,11 +138,11 @@ python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOM
 
 ## 数据采集
 
-开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)可以使用 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)项目。
+开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)可以使用 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)项目。
 
 ## 数据转换
 
-使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储 ，其结构如下。需要把 JSON 的格式转 lerobot 所需格式，请按照以下步骤进行转换:
+使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)采集的数据是采用 JSON 格式进行存储 ，其结构如下。需要把 JSON 的格式转 lerobot 所需格式，请按照以下步骤进行转换:
 
 以下转换步骤以此数据的存储地址和格式为例。假如采集的数据存放在`$HOME/datasets/`目录中的`g1_grabcube_double_hand` 目录中，格式如下:
 
