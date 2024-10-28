@@ -747,9 +747,6 @@ if __name__ == "__main__":
     elif control_mode == "record":
         pretrained_policy_name_or_path = args.pretrained_policy_name_or_path
         policy_overrides = args.policy_overrides
-        print("pretrained_policy_name_or_path", pretrained_policy_name_or_path)
-        print("policy_overrides", policy_overrides)
-
         del kwargs["pretrained_policy_name_or_path"]
         del kwargs["policy_overrides"]
 
@@ -758,25 +755,9 @@ if __name__ == "__main__":
             pretrained_policy_path = get_pretrained_policy_path(pretrained_policy_name_or_path)
             policy_cfg = init_hydra_config(pretrained_policy_path / "config.yaml", policy_overrides)
             policy = make_policy(hydra_cfg=policy_cfg, pretrained_policy_name_or_path=pretrained_policy_path)
-
-            exit()
-            eval_policy(robot, policy, policy_cfg, **kwargs)
+            record(robot, policy, policy_cfg, **kwargs)
         else:
-        
             record(robot, **kwargs)
-
-    elif control_mode == "eval":
-        pretrained_policy_name_or_path = args.pretrained_policy_name_or_path 
-        policy_overrides = args.policy_overrides
-        del kwargs["pretrained_policy_name_or_path"]
-        del kwargs["policy_overrides"]
-
-        policy_cfg = None
-        if pretrained_policy_name_or_path is not None:
-            pretrained_policy_path = get_pretrained_policy_path(pretrained_policy_name_or_path)
-            policy_cfg = init_hydra_config(pretrained_policy_path / "config.yaml", policy_overrides)
-            policy = make_policy(hydra_cfg=policy_cfg, pretrained_policy_name_or_path=pretrained_policy_path)
-            eval_policy(robot, policy, policy_cfg, **kwargs)
 
     elif control_mode == "replay":
         replay(robot, **kwargs)

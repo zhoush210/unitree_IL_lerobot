@@ -1,11 +1,8 @@
 """
 This file contains utilities for recording frames from cameras. For more info look at `OpenCVCamera` docstring.
 """
-
 import argparse
 import concurrent.futures
-import math
-import platform
 import shutil
 import threading
 import time
@@ -16,22 +13,15 @@ from threading import Thread
 import cv2
 import numpy as np
 from PIL import Image
+import pyrealsense2 as rs
 
 from lerobot.common.robot_devices.utils import RobotDeviceAlreadyConnectedError, RobotDeviceNotConnectedError
 from lerobot.common.utils.utils import capture_timestamp_utc
 from lerobot.lerobot.scripts.control_robot_unitree import busy_wait
-import pyrealsense2 as rs
 
 # Use 1 thread to avoid blocking the main thread. Especially useful during data collection
 # when other threads are used to save the images.
 cv2.setNumThreads(1)
-
-# The maximum opencv device index depends on your operating system. For instance,
-# if you have 3 cameras, they should be associated to index 0, 1, and 2. This is the case
-# on MacOS. However, on Ubuntu, the indices are different like 6, 16, 23.
-# When you change the USB port or reboot the computer, the operating system might
-# treat the same cameras as new devices. Thus we select a higher bound to search indices.
-MAX_OPENCV_INDEX = 60
 
 @staticmethod
 def get_connected_devices_serial():
@@ -53,7 +43,6 @@ def save_image(img_array, camera_index, frame_index, images_dir):
     # path = images_dir / f"camera_{camera_index:02d}_frame_{frame_index:06d}.png"
     # path.parent.mkdir(parents=True, exist_ok=True)
     img.save(path, quality=100)
-
 
 
 def save_images_from_cameras(
@@ -86,7 +75,6 @@ def save_images_from_cameras(
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         while True:
             now = time.perf_counter()
-
             for camera in cameras:
                 # If we use async_read when fps is None, the loop will go full speed, and we will endup
                 # saving the same images from the cameras multiple times until the RAM/disk is full.
@@ -141,10 +129,7 @@ class OpenCVCamera:
         self.color_mode = config.color_mode
         align_to = rs.stream.color
         self.align = rs.align(align_to)
-
-
         self.enable_depth = False
-
         self.camera = None
         self.is_connected = False
         self.thread = None
