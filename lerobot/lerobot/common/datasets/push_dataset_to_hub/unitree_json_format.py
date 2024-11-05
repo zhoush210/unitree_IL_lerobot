@@ -88,7 +88,8 @@ def get_states_data(episode_data):
 
 def get_images_data(ep_path, episode_data):
     images = {}
-    camera_to_image_key = {'color_0': 'top', 'color_1': 'wrist'}
+    # Add the camera_to_image_key as required
+    camera_to_image_key = {'color_0': 'left_top', 'color_1': 'right_top', 'color_2': 'left_wrist' ,'color_3': 'right_wrist'}
     cameras = get_cameras(episode_data)
 
     for camera in cameras:
