@@ -1,4 +1,4 @@
-**其他语言版本: [English](README.md).**
+**其他语言版本: [English](README.md), [日本語](README_ja.md).**
 
 # 目录说明
 
