@@ -13,28 +13,76 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import traceback
+
 import pytest
+from serial import SerialException
 
-from lerobot.common.utils.utils import init_hydra_config
+from lerobot import available_cameras, available_motors, available_robots
+from lerobot.common.robot_devices.robots.utils import make_robot
+from tests.utils import DEVICE, make_camera, make_motors_bus
 
-from .utils import DEVICE, KOCH_ROBOT_CONFIG_PATH
+# Import fixture modules as plugins
+pytest_plugins = [
+    "tests.fixtures.dataset_factories",
+    "tests.fixtures.files",
+    "tests.fixtures.hub",
+    "tests.fixtures.optimizers",
+]
 
 
 def pytest_collection_finish():
     print(f"\nTesting with {DEVICE=}")
 
 
-@pytest.fixture(scope="session")
-def is_koch_available():
-    try:
-        from lerobot.common.robot_devices.robots.factory import make_robot
+def _check_component_availability(component_type, available_components, make_component):
+    """Generic helper to check if a hardware component is available"""
+    if component_type not in available_components:
+        raise ValueError(
+            f"The {component_type} type is not valid. Expected one of these '{available_components}'"
+        )
 
-        robot_cfg = init_hydra_config(KOCH_ROBOT_CONFIG_PATH)
-        robot = make_robot(robot_cfg)
-        robot.connect()
-        del robot
+    try:
+        component = make_component(component_type)
+        component.connect()
+        del component
         return True
+
     except Exception as e:
-        print("A koch robot is not available.")
-        print(e)
+        print(f"\nA {component_type} is not available.")
+
+        if isinstance(e, ModuleNotFoundError):
+            print(f"\nInstall module '{e.name}'")
+        elif isinstance(e, SerialException):
+            print("\nNo physical device detected.")
+        elif isinstance(e, ValueError) and "camera_index" in str(e):
+            print("\nNo physical camera detected.")
+        else:
+            traceback.print_exc()
+
         return False
+
+
+@pytest.fixture
+def is_robot_available(robot_type):
+    return _check_component_availability(robot_type, available_robots, make_robot)
+
+
+@pytest.fixture
+def is_camera_available(camera_type):
+    return _check_component_availability(camera_type, available_cameras, make_camera)
+
+
+@pytest.fixture
+def is_motor_available(motor_type):
+    return _check_component_availability(motor_type, available_motors, make_motors_bus)
+
+
+@pytest.fixture
+def patch_builtins_input(monkeypatch):
+    def print_text(text=None):
+        if text is not None:
+            print(text)
+
+    monkeypatch.setattr("builtins.input", print_text)

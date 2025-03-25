@@ -1,53 +1,26 @@
-from pathlib import Path
+# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Protocol
 
-import cv2
-import einops
 import numpy as np
 
-
-def write_shape_on_image_inplace(image):
-    height, width = image.shape[:2]
-    text = f"Width: {width} Height: {height}"
-
-    # Define the font, scale, color, and thickness
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 1
-    color = (255, 0, 0)  # Blue in BGR
-    thickness = 2
-
-    position = (10, height - 10)  # 10 pixels from the bottom-left corner
-    cv2.putText(image, text, position, font, font_scale, color, thickness)
-
-
-def save_color_image(image, path, write_shape=False):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if write_shape:
-        write_shape_on_image_inplace(image)
-    cv2.imwrite(str(path), image)
-
-
-def save_depth_image(depth, path, write_shape=False):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
-    depth_image = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
-
-    if write_shape:
-        write_shape_on_image_inplace(depth_image)
-    cv2.imwrite(str(path), depth_image)
-
-
-def convert_torch_image_to_cv2(tensor, rgb_to_bgr=True):
-    assert tensor.ndim == 3
-    c, h, w = tensor.shape
-    assert c < h and c < w
-    color_image = einops.rearrange(tensor, "c h w -> h w c").numpy()
-    if rgb_to_bgr:
-        color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
-    return color_image
+from lerobot.common.robot_devices.cameras.configs import (
+    CameraConfig,
+    IntelRealSenseCameraConfig,
+    OpenCVCameraConfig,
+)
 
 
 # Defines a camera type
@@ -56,3 +29,39 @@ class Camera(Protocol):
     def read(self, temporary_color: str | None = None) -> np.ndarray: ...
     def async_read(self) -> np.ndarray: ...
     def disconnect(self): ...
+
+
+def make_cameras_from_configs(camera_configs: dict[str, CameraConfig]) -> list[Camera]:
+    cameras = {}
+
+    for key, cfg in camera_configs.items():
+        if cfg.type == "opencv":
+            from lerobot.common.robot_devices.cameras.opencv import OpenCVCamera
+
+            cameras[key] = OpenCVCamera(cfg)
+
+        elif cfg.type == "intelrealsense":
+            from lerobot.common.robot_devices.cameras.intelrealsense import IntelRealSenseCamera
+
+            cameras[key] = IntelRealSenseCamera(cfg)
+        else:
+            raise ValueError(f"The camera type '{cfg.type}' is not valid.")
+
+    return cameras
+
+
+def make_camera(camera_type, **kwargs) -> Camera:
+    if camera_type == "opencv":
+        from lerobot.common.robot_devices.cameras.opencv import OpenCVCamera
+
+        config = OpenCVCameraConfig(**kwargs)
+        return OpenCVCamera(config)
+
+    elif camera_type == "intelrealsense":
+        from lerobot.common.robot_devices.cameras.intelrealsense import IntelRealSenseCamera
+
+        config = IntelRealSenseCameraConfig(**kwargs)
+        return IntelRealSenseCamera(config)
+
+    else:
+        raise ValueError(f"The camera type '{camera_type}' is not valid.")

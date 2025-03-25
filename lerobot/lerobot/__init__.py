@@ -27,6 +27,9 @@ Example:
         print(lerobot.available_real_world_datasets)
         print(lerobot.available_policies)
         print(lerobot.available_policies_per_env)
+        print(lerobot.available_robots)
+        print(lerobot.available_cameras)
+        print(lerobot.available_motors)
     ```
 
 When implementing a new dataset loadable with LeRobotDataset follow these steps:
@@ -55,7 +58,6 @@ available_tasks_per_env = {
     ],
     "pusht": ["PushT-v0"],
     "xarm": ["XarmLift-v0"],
-    "dora_aloha_real": ["DoraAloha-v0", "DoraKoch-v0", "DoraReachy2-v0"],
 }
 available_envs = list(available_tasks_per_env.keys())
 
@@ -82,23 +84,6 @@ available_datasets_per_env = {
         "lerobot/xarm_lift_medium_replay_image",
         "lerobot/xarm_push_medium_image",
         "lerobot/xarm_push_medium_replay_image",
-    ],
-    "dora_aloha_real": [
-        "lerobot/aloha_static_battery",
-        "lerobot/aloha_static_candy",
-        "lerobot/aloha_static_coffee",
-        "lerobot/aloha_static_coffee_new",
-        "lerobot/aloha_static_cups_open",
-        "lerobot/aloha_static_fork_pick_up",
-        "lerobot/aloha_static_pingpong_test",
-        "lerobot/aloha_static_pro_pencil",
-        "lerobot/aloha_static_screw_driver",
-        "lerobot/aloha_static_tape",
-        "lerobot/aloha_static_thread_velcro",
-        "lerobot/aloha_static_towel",
-        "lerobot/aloha_static_vinh_cup",
-        "lerobot/aloha_static_vinh_cup_left",
-        "lerobot/aloha_static_ziploc_slide",
     ],
 }
 
@@ -178,11 +163,11 @@ available_real_world_datasets = [
     "lerobot/usc_cloth_sim",
 ]
 
-available_datasets = list(
-    itertools.chain(*available_datasets_per_env.values(), available_real_world_datasets)
+available_datasets = sorted(
+    set(itertools.chain(*available_datasets_per_env.values(), available_real_world_datasets))
 )
 
-# lists all available policies from `lerobot/common/policies` by their class attribute: `name`.
+# lists all available policies from `lerobot/common/policies`
 available_policies = [
     "act",
     "diffusion",
@@ -190,12 +175,34 @@ available_policies = [
     "vqbet",
 ]
 
+# lists all available robots from `lerobot/common/robot_devices/robots`
+available_robots = [
+    "koch",
+    "koch_bimanual",
+    "aloha",
+    "so100",
+    "moss",
+]
+
+# lists all available cameras from `lerobot/common/robot_devices/cameras`
+available_cameras = [
+    "opencv",
+    "intelrealsense",
+]
+
+# lists all available motors from `lerobot/common/robot_devices/motors`
+available_motors = [
+    "dynamixel",
+    "feetech",
+]
+
 # keys and values refer to yaml files
 available_policies_per_env = {
     "aloha": ["act"],
     "pusht": ["diffusion", "vqbet"],
     "xarm": ["tdmpc"],
-    "dora_aloha_real": ["act_real"],
+    "koch_real": ["act_koch_real"],
+    "aloha_real": ["act_aloha_real"],
 }
 
 env_task_pairs = [(env, task) for env, tasks in available_tasks_per_env.items() for task in tasks]

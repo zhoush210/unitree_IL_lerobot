@@ -4,7 +4,7 @@
 
 | Directory     | Description                                                                                                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| lerobot       | The code in the lerobot repository has been modified for G1 data conversion and training; its corresponding commit version number is c712d68f6a4fcb282e49185b4af46b0cee6fa5ed. |
+| lerobot       | The code in the lerobot repository has been modified for G1 data conversion and training; its corresponding commit version number is 725b446ad6e15499c4d92acce24b72103d4ce777. |
 | unitree_utils | The code related to Unitree robot control and data processing tools.                                                                                                           |
 
 # Environment Setup

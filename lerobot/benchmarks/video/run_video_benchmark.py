@@ -67,7 +67,7 @@ def parse_int_or_none(value) -> int | None:
 def check_datasets_formats(repo_ids: list) -> None:
     for repo_id in repo_ids:
         dataset = LeRobotDataset(repo_id)
-        if dataset.video:
+        if len(dataset.meta.video_keys) > 0:
             raise ValueError(
                 f"Use only image dataset for running this benchmark. Video dataset provided: {repo_id}"
             )
@@ -266,7 +266,7 @@ def benchmark_encoding_decoding(
         )
 
     ep_num_images = dataset.episode_data_index["to"][0].item()
-    width, height = tuple(dataset[0][dataset.camera_keys[0]].shape[-2:])
+    width, height = tuple(dataset[0][dataset.meta.camera_keys[0]].shape[-2:])
     num_pixels = width * height
     video_size_bytes = video_path.stat().st_size
     images_size_bytes = get_directory_size(imgs_dir)
