@@ -7,12 +7,10 @@ Example usage: uv run examples/aloha_real/convert_aloha_data_to_lerobot.py --raw
 import dataclasses
 from pathlib import Path
 import shutil
-from typing import Literal
+from typing import Literal, List, Dict
+from lerobot.common.constants import HF_LEROBOT_HOME
 
-import h5py
-from lerobot.common.datasets.lerobot_dataset import LEROBOT_HOME
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-from lerobot.common.datasets.push_dataset_to_hub._download_raw import download_raw
 import numpy as np
 import torch
 import tqdm
@@ -34,7 +32,16 @@ class DatasetConfig:
 DEFAULT_DATASET_CONFIG = DatasetConfig()
 
 
-z1_motors_with_gripper = [
+@dataclasses.dataclass(frozen=True)
+class RobotConfig:
+    motors: List[str]
+    cameras: List[str]
+    camera_to_image_key:Dict[str, str]
+    json_data_name: List[str]
+
+
+Z1_CONFIG = RobotConfig(
+    motors=[
         "kLeftWaist",
         "kLeftShoulder",
         "kLeftElbow",
@@ -49,17 +56,26 @@ z1_motors_with_gripper = [
         "kRightWristAngle",
         "kRightWristRotate",
         "kRightGripper",
-        ]
+    ],
+    cameras=[
+        "cam_high",
+        "cam_left_wrist",
+        "cam_right_wrist",
+    ],
+    camera_to_image_key = {'color_0': 'cam_high', 'color_1': 'cam_left_wrist' ,'color_2': 'cam_right_wrist'},
+    json_data_name = ['left_arm', 'right_arm']
+)
 
 
-g1_motors_with_gripper = [        
+G1_GRIPPER_CONFIG = RobotConfig(
+    motors=[
         "kLeftShoulderPitch",
         "kLeftShoulderRoll",
         "kLeftShoulderYaw",
         "kLeftElbow",
         "kLeftWristRoll",
         "kLeftWristPitch",
-        "kLeftWristyaw",
+        "kLeftWristYaw",
         "kRightShoulderPitch",
         "kRightShoulderRoll",
         "kRightShoulderYaw",
@@ -68,10 +84,21 @@ g1_motors_with_gripper = [
         "kRightWristPitch",
         "kRightWristYaw",
         "kLeftGripper",
-        "kRightGripper"
-        ]
+        "kRightGripper",
+    ],
+    cameras=[
+        "cam_left_high",
+        "cam_right_high",
+        "cam_left_wrist",
+        "cam_right_wrist",
+        ],
+    camera_to_image_key = {'color_0': 'cam_left_high', 'color_1':'cam_right_high', 'color_2': 'cam_left_wrist' ,'color_3': 'cam_right_wrist'},
+    json_data_name = ['left_arm', 'right_arm']
+)
 
-g1_motors_with_dex3 = [        
+
+G1_DEX3_CONFIG = RobotConfig(
+    motors=[
         "kLeftShoulderPitch",
         "kLeftShoulderRoll",
         "kLeftShoulderYaw",
@@ -100,19 +127,25 @@ g1_motors_with_dex3 = [
         "kRightHandIndex1",
         "kRightHandMiddle0",
         "kRightHandMiddle1",
-    ]
-
-z1_cameras = [
-        "cam_high",
-        "cam_left_wrist",
-        "cam_right_wrist",
-    ]
-g1_cameras = [
+    ],
+    cameras=[
         "cam_left_high",
         "cam_right_high",
         "cam_left_wrist",
         "cam_right_wrist",
-    ]
+    ],
+    camera_to_image_key = {'color_0': 'cam_left_high', 'color_1':'cam_right_high', 'color_2': 'cam_left_wrist' ,'color_3': 'cam_right_wrist'},
+    json_data_name = ['left_arm', 'right_arm', 'left_hand', 'right_hand']
+)
+
+
+ROBOT_CONFIGS = {
+    "Unitree_Z1_Dual": Z1_CONFIG,
+    "Unitree_G1_Gripper": G1_GRIPPER_CONFIG,
+    "Unitree_G1_Dex3": G1_DEX3_CONFIG,
+}
+
+
 def create_empty_dataset(
     repo_id: str,
     robot_type: str,
@@ -122,8 +155,9 @@ def create_empty_dataset(
     has_effort: bool = False,
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
 ) -> LeRobotDataset:
-    motors = g1_motors_with_gripper
-    cameras = g1_cameras
+    
+    motors = ROBOT_CONFIGS[robot_type].motors
+    cameras = ROBOT_CONFIGS[robot_type].cameras
 
     features = {
         "observation.state": {
@@ -171,8 +205,8 @@ def create_empty_dataset(
             ],
         }
 
-    if Path(LEROBOT_HOME / repo_id).exists():
-        shutil.rmtree(LEROBOT_HOME / repo_id)
+    if Path(HF_LEROBOT_HOME / repo_id).exists():
+        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
 
     return LeRobotDataset.create(
         repo_id=repo_id,
@@ -187,7 +221,7 @@ def create_empty_dataset(
     )
 
 
-def get_all_json(data_dir):
+def get_all_json(data_dir: str):
     task_paths = []
     episode_paths = []
 
@@ -200,9 +234,13 @@ def get_all_json(data_dir):
 
     return task_paths, episode_paths
 
-json_file = 'data.json'
 
-def extract_data(episode_data, key, parts):
+def extract_data(
+        episode_data, 
+        key: str,
+        parts: list[str]
+        ):
+
     result = []
     for sample_data in episode_data['data']:
         data_array = np.array([], dtype=np.float32)
@@ -211,31 +249,24 @@ def extract_data(episode_data, key, parts):
                 qpos = np.array(sample_data[key][part]['qpos'], dtype=np.float32)
                 data_array = np.concatenate([data_array, qpos])
         result.append(data_array)
+
     return np.array(result)
 
-def get_actions_data(episode_data):
-    parts = ['left_arm', 'right_arm', 'left_hand', 'right_hand']
-    return extract_data(episode_data, 'actions', parts)
 
-def get_states_data(episode_data):
-    parts = ['left_arm', 'right_arm', 'left_hand', 'right_hand']
-    return extract_data(episode_data, 'states', parts)
-
-
-def get_cameras(json_data):
-    # ignore depth channel, not currently handled
-    # TODO(rcadene): add depth
-    keys = json_data["data"][0]['colors'].keys()
-    rgb_cameras = [key for key in keys if "depth" not in key]  # noqa: SIM118
-    return rgb_cameras
-
-
-def get_images_data(ep_path, episode_data):
+def get_images_data(
+        ep_path: str, 
+        episode_data, 
+        robot_type: str
+        ):
+    
     images = {}
+    
     # Add the camera_to_image_key as required
-    camera_to_image_key = {'color_0': 'cam_left_high', 'color_1':'cam_right_high', 'color_2': 'cam_left_wrist' ,'color_3': 'cam_right_wrist'}
-    cameras = get_cameras(episode_data)
-
+    camera_to_image_key = ROBOT_CONFIGS[robot_type].camera_to_image_key
+    
+    keys = episode_data["data"][0]['colors'].keys()
+    cameras = [key for key in keys if "depth" not in key]
+    
     for camera in cameras:
         image_key = camera_to_image_key.get(camera)
         if image_key is None:
@@ -264,6 +295,7 @@ def populate_dataset(
     dataset: LeRobotDataset,
     raw_dir: list[Path],
     task: str,
+    robot_type: str,
     episodes: list[int] | None = None,
 ) -> LeRobotDataset:
 
@@ -278,22 +310,23 @@ def populate_dataset(
 
     for ep_idx in tqdm.tqdm(episodes):
         ep_path = episode_paths[ep_idx]
-        json_path = os.path.join(ep_path, json_file)
+        json_path = os.path.join(ep_path, 'data.json')
 
         with open(json_path, 'r', encoding='utf-8') as jsonf:
             episode_data = json.load(jsonf)
 
-            action = torch.from_numpy(get_actions_data(episode_data))
-            state = torch.from_numpy(get_states_data(episode_data))
-            imgs_per_cam = get_images_data(ep_path, episode_data)
+            action = torch.from_numpy(extract_data(episode_data, 'actions', ROBOT_CONFIGS[robot_type].json_data_name))
+            state = torch.from_numpy(extract_data(episode_data, 'states', ROBOT_CONFIGS[robot_type].json_data_name))
+            
+            imgs_per_cam = get_images_data(ep_path, episode_data, robot_type)
 
-            # imgs_per_cam, state, action, velocity, effort = load_raw_episode_data(ep_path)
             num_frames = action.shape[0]
 
             for i in range(num_frames):
                 frame = {
                     "observation.state": state[i],
                     "action": action[i],
+                    "task": task
                 }
 
                 for camera, img_array in imgs_per_cam.items():
@@ -301,29 +334,25 @@ def populate_dataset(
 
                 dataset.add_frame(frame)
 
-            dataset.save_episode(task=task, encode_videos=True)
+            dataset.save_episode()
 
     return dataset
 
 
-def port_aloha(
+def port_dataset(
     raw_dir: Path,
     repo_id: str,
-    raw_repo_id: str | None = None,
-    task: str = "pour coffee",
+    robot_type: str,        # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
+    task: str,
     *,
     episodes: list[int] | None = None,
-    push_to_hub: bool = True,
-    is_mobile: bool = False,
+    push_to_hub: bool = False,
     mode: Literal["video", "image"] = "video",
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
 ):
-    robot_type = 'Unitree_Z1_Dual'
-    task000 = "pour coffee"
 
-    if (LEROBOT_HOME / repo_id).exists():
-        shutil.rmtree(LEROBOT_HOME / repo_id)
-
+    if (HF_LEROBOT_HOME / repo_id).exists():
+        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
 
     dataset = create_empty_dataset(
         repo_id,
@@ -336,20 +365,23 @@ def port_aloha(
     dataset = populate_dataset(
         dataset,
         raw_dir,
-        task=task000,
+        robot_type=robot_type,
+        task=task,
         episodes=episodes,
     )
     dataset.consolidate()
 
-    # task = "Henry-Ellis/Z1_DualArm_PourCoffee"
-    # root_path = "/home/unitree/datasets/z1/Henry-Ellis/Z1_DualArm_PourCoffee"
+    if push_to_hub:
+        dataset.push_to_hub(upload_large_folder = True)
 
-    # # We can have a look and fetch its metadata to know more about it:
-    # dataset = LeRobotDataset(repo_id = task, root = root_path, local_files_only=True)
 
-    # if push_to_hub:
-    #     dataset.push_to_hub()
+def local_push_to_hub(
+        repo_id: str,
+        root_path: Path,):
+
+    dataset = LeRobotDataset(repo_id = repo_id, root = root_path)
+    dataset.push_to_hub(upload_large_folder = True)
 
 
 if __name__ == "__main__":
-    tyro.cli(port_aloha)
+    tyro.cli(port_dataset)

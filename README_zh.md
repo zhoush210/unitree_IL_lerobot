@@ -1,11 +1,12 @@
-**其他语言版本: [English](README.md), [日本語](README_ja.md).**
+**其他语言版本: [English](README.md).**
 
 # 目录说明
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| lerobot       | lerobot 仓库代码，已修改可用于 G1 数据转换与训练；其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
-| unitree_utils | unitree 机器人控制相关代码以及数据处理工具                                                                          |
+| lerobot       | lerobot 仓库代码，其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
+| utils         | unitree 数据处理工具     |
+| eval_robot    | unitree 模型真机推理验证     |
 
 # 环境安装
 
@@ -13,31 +14,19 @@
 
 本项的目的是使用[LeRobot](https://github.com/huggingface/lerobot)开源框架训练并测试基于 Unitree 机器人采集的数据。所以首先需要安装 LeRobot 相关依赖。安装步骤如下，也可以参考[LeRobot](https://github.com/huggingface/lerobot)官方进行安装:
 
-下载源码
 
-```
-cd $HOME
-
-git clone git@github.com:unitreerobotics/unitree_IL_lerobot.git
-
-OR
-
+```bash
+# 下载源码
 git clone https://github.com/unitreerobotics/unitree_IL_lerobot.git
 
-```
-
-创建一个 python 为 3.10 的虚拟环境并激活
-
-```
+# 创建 conda 环境
 conda create -y -n lerobot python=3.10
 conda activate lerobot
-```
 
-安装 LeRobot
-
-```
+# 安装 LeRobot
 cd unitree_IL_lerobot/lerobot
 pip install -e .
+conda install ffmpeg
 ```
 
 **注意事项:** 根据您的平台，如果在此步骤中遇到任何构建错误，您可能需要安装 `cmake` 和 `build-essential` 来构建我们的一些依赖项。在 Linux 上，可以使用以下命令安装：`sudo apt-get install cmake build-essential`。
@@ -47,77 +36,58 @@ pip install -e .
 针对 Unitree 机器人控制需要安装一些依赖,安装步骤如下:
 
 ```
-git clone https://github.com/unitreerobotics/unitree_dds_wrapper.git
-cd unitree_dds_wrapper/python
-pip install -e .
+git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
+cd unitree_sdk2_python  && pip install -e .
 ```
 
-## 数据下载
-
-如果你想使用我们提供的 Unitree G1 采集的双臂操作的数据集可以访问 [UnitreeG1_DualArmGrasping](https://huggingface.co/datasets/unitreerobotics/UnitreeG1_DualArmGrasping) 。
-如需下载可参考下面命令进行下载:
-
+## 数据加载
+加载huggingface上unitreerobotics/G1_ToastedBread_Dataset数据集(v2.0版本)，如果想从加载本地数据使用 root = '.../...' 
 ```
-cd $HOME
-mkdir lerobot_datasets && cd lerobot_datasets
-git clone https://huggingface.co/datasets/unitreerobotics/UnitreeG1_DualArmGrasping
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+import tqdm
+
+episode_index = 1
+
+dataset = LeRobotDataset(repo_id="unitreerobotics/G1_ToastedBread_Dataset")
+
+from_idx = dataset.episode_data_index["from"][episode_index].item()
+to_idx = dataset.episode_data_index["to"][episode_index].item()
+
+for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
+    step = dataset[step_idx]
 ```
-
-**注意:** 如果下载出现问题可能需要安装 git-lfs，安装命令如下:
-
-```
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-sudo apt-get install git-lfs
-git lfs install
-```
-
-下载后的数据的存储目录结构如下：
-
-    lerobot_datasets
-    └── UnitreeG1_DualArmGrasping
-        ├── meta_data
-        ├── README.md
-        ├── train
-        └── videos
-
-# 训练(主要是读取本地数据进行训练)
-
-## 添加本地数据路径
-
-可以使用下面命令设置数据存放路径：
-
-```
-export DATA_DIR="$HOME/lerobot_datasets/"
+可视化 
+```bash
+python lerobot/scripts/visualize_dataset.py \
+    --repo-id unitreerobotics/G1_ToastedBread_Dataset \
+    --episode-index 0
 ```
 
-## 修改配置文件[可选]
-
-**温馨提示：** 使用我们提供的相关配置文件,可以省略下面的修改
-
-- 修改 `lerobot/lerobot/configs/policy` 中策略的配置
-  - `dataset_repo_id` 设置为 `UnitreeG1_DualArmGrasping`(与存储的目录结构有关系)
-  - 注意点：
-    - 如果使用 ACT 格式的数据集训练 DP，可以在 `lerobot/lerobot/configs/policy` 中添加 `diffusion_aloha.yaml` 配置文件；[参考](https://github.com/huggingface/lerobot/pull/149)
-    - 如果生成 DP 的数据集，则需要注意 `override_dataset_stats` 中的 min 和 max
-- 修改 `lerobot/lerobot/configs/env` 中环境的策略
-  - 主要修改环境配置中的 `state_dim` 和 `action_dim`，修改为自己对应的维度即可
+# 训练
 
 ## 运行训练
 
+[请详细阅读官方lerobot训练实例与相关参数](https://github.com/huggingface/lerobot/blob/main/examples/4_train_policy_with_script.md)
+
+
+- 训练 act
 ```
-cd unitree_IL_lerobot/lerobot
+python lerobot/scripts/train.py \
+    --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+    --policy.type=act 
 ```
 
 - 训练 Diffusion Policy
-
 ```
-python lerobot/scripts/train.py    policy=diffusion_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=UnitreeG1_DualArmGrasping
+python lerobot/scripts/train.py \
+  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+  --policy.type=diffusion
 ```
-
-- 训练 ACT
-
+- 训练 pi0
 ```
-python lerobot/scripts/train.py    policy=act_unitree_real_g1    env=unitree_real_g1     dataset_repo_id=UnitreeG1_DualArmGrasping
+python lerobot/scripts/train.py \
+  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+  --policy.type=pi0
 ```
 
 # 真机测试
@@ -138,16 +108,15 @@ python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOM
 
 ## 数据采集
 
-开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)可以使用 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)项目。
+开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)可以使用 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)项目。
 
 ## 数据转换
 
-使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1)采集的数据是采用 JSON 格式进行存储 ，其结构如下。需要把 JSON 的格式转 lerobot 所需格式，请按照以下步骤进行转换:
+使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储 ，其结构如下。需要把 JSON 的格式转 lerobot 所需格式，请按照以下步骤进行转换:
 
 以下转换步骤以此数据的存储地址和格式为例。假如采集的数据存放在`$HOME/datasets/`目录中的`g1_grabcube_double_hand` 目录中，格式如下:
 
     g1_grabcube_double_hand/        #任务名称
-    │
     ├── episode_0001                #第一条轨迹
     │    ├──audios/                 #声音信息
     │    ├──colors/                 #图像信息
@@ -157,44 +126,31 @@ python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOM
     ├── episode_...
     ├── episode_xxx
 
-### 数据命名排序
-
-生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 unitree_utils/sort_and_rename_folders 工具对数据进行排序处理
-
-```
-cd unitree_IL_lerobot
-python unitree_utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
-```
-
-### 在 Lerobot 源码中添加数据转换工具[可选]
-
-**注意:** 如果使用我们项目中的 LeRobot，可以省略以下步骤直接进行转换
-
-- 添加 unitree_json_formats 数据转换工具
-
-在 `lerobot/lerobot/common/datasets/push_dataset_to_hub` 中添加 `unitree_json_formats.py`,里面是读取 JSON 数据内容并转成 lerobot 所需数据的工具。(如果需要过滤数据可修改此文件)
-
-**注意:** 其中的 `get_images_data` 函数用于图像数据的处理，需要根据 ACT 或者 DP 配置文件修改 image_key；默认采取的是 ACT 策略中单相机情况的命名`color_0 --> top`，如果是双相机 `color_0 --> top，color_1 --> wrist`
-
-- 导入 unitree_json_formats
-
-为了可以使用导入 `unitree_json_formats` 进行数据转换，需要修改 `lerobot/lerobot/scripts/push_dataset_to_hub.py`。在 `push_dataset_to_hub.py`文件 中的 `get_from_raw_to_lerobot_format_fn` 函数中添加:
-
-```
-    elif raw_format=="unitree_json":
-        from lerobot.common.datasets.push_dataset_to_hub.unitree_json_format import from_raw_to_lerobot_format
-```
 
 ### 进行转换
-
+生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 utils/sort_and_rename_folders 工具对数据进行排序处理
+```bash
+python utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
-cd  unitree_IL_lerobot/lerobot
-python lerobot/scripts/push_dataset_to_hub.py --raw-dir $HOME/datasets/g1_grabcube_double_hand --raw-format unitree_json  --push-to-hub 0 --repo-id unitree/UnitreeG1_DualArmGrasping --local-dir  $HOME/lerobot_datasets/UnitreeG1_DualArmGrasping --fps 30
+
+
+使用 utils/convert_unitree_json_to_lerobot.py 进行转换
+
+```bash
+# --raw-dir     对应json的数据集目录
+# --repo-id     对应自己的repo-id 
+# --task        对应的任务 
+# --push_to_hub 是否上传到云端 
+# --robot_type  对应的机器人类型 
+
+python utils/convert_unitree_json_to_lerobot.py 
+    --raw-dir $HOME/datasets/g1_grabcube_double_hand    
+    --repo-id your/g1_grabcube_double_hand 
+    --robot_type Unitree_G1_Dex3    # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
+    --task "pour coffee"
+    --push_to_hub true
 ```
 
-**注意:** 转换后的数据会存放在 --local-dir 中,--repo-id 可根据自己需求填写。
-
-转换后可以参考上面描述的训练步骤进行训练和测试
 
 # 致谢
 
