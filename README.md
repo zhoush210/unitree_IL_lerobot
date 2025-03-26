@@ -1,4 +1,4 @@
-**Read this in other languages: [中文](README_zh.md).**
+**Read this in other languages: [中文](./docs/README_zh.md).**
 
 # 0. 📖 Introduction
 
@@ -6,7 +6,7 @@ This repository is used for `lerobot training validation` and `unitree related d
 
 | Directory          | Description                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| lerobot       | The code in the `lerobot repository` for training;  its corresponding commit version number is `725b44`.|
+| lerobot       | The code in the `lerobot repository` for training;  its corresponding commit version number is `725b446a`.|
 | utils         | `unitree data processing tool `   |
 | eval_robot    | `unitree real machine inference verification of the model`     |
 
@@ -159,12 +159,12 @@ To test your trained model on a real robot, you can use the eval_g1.py script lo
 cd eval_robot/eval_g1
 
 python eval_g1.py  
---policy.path=outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model 
+--policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
+# 5. 🤔 Troubleshooting
 
-
-# 5. 🙏 Acknowledgement
+# 6. 🙏 Acknowledgement
 
 This code builds upon following open-source code-bases. Please visit the URLs to see the respective LICENSES:
 

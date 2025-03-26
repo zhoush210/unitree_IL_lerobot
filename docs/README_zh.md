@@ -1,12 +1,10 @@
-**其他语言版本: [English](README.md).**
-
 # 0. 📖 介绍
 
 此存储库是使用`lerobot训练验证`和`unitree相关数据转换`
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| lerobot       | `lerobot` 仓库代码，其对应的 commit 版本号为 `725b44` |
+| lerobot       | `lerobot` 仓库代码，其对应的 commit 版本号为 `725b446a` |
 | utils         | `unitree 数据处理工具`     |
 | eval_robot    | `unitree 模型真机推理验证`     |
 
@@ -151,11 +149,12 @@ python lerobot/scripts/train.py \
 cd eval_robot/eval_g1
 
 python eval_g1.py  
---policy.path=outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model 
+--policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
+# 5. 🤔 问题记录
 
-# 5. 🙏 致谢
+# 6. 🙏 致谢
 
 此代码基于以下开源代码库进行构建。请访问以下链接查看相关的许可证：
 
