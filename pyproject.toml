@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "unitree_lerobot"
+version = "0.1.0"
+description = "unitree data conversion and real machine inference verification"
+readme = "README.md"
+license = "Apache-2.0"
+packages = [{include = "unitree_lerobot"}]
+requires-python = ">=3.10,<3.11"
+
+
+[tool.poetry.dependencies]
+unitree_sdk2py = { git = "https://github.com/unitreerobotics/unitree_sdk2_python", rev = "2991deae4efec5be7c4bf0cb4445b92b08f35bda" }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

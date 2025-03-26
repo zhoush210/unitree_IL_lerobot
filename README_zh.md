@@ -4,7 +4,7 @@
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| lerobot       | lerobot 仓库代码，其对应的 commit 版本号为 c712d68f6a4fcb282e49185b4af46b0cee6fa5ed |
+| lerobot       | lerobot 仓库代码，其对应的 commit 版本号为 725b446ad6e15499c4d92acce24b72103d4ce777 |
 | utils         | unitree 数据处理工具     |
 | eval_robot    | unitree 模型真机推理验证     |
 
@@ -20,25 +20,23 @@
 git clone https://github.com/unitreerobotics/unitree_IL_lerobot.git
 
 # 创建 conda 环境
-conda create -y -n lerobot python=3.10
-conda activate lerobot
+conda create -y -n unitree_lerobot python=3.10
+conda activate unitree_lerobot
 
 # 安装 LeRobot
 cd unitree_IL_lerobot/lerobot
 pip install -e .
-conda install ffmpeg
 ```
 
 **注意事项:** 根据您的平台，如果在此步骤中遇到任何构建错误，您可能需要安装 `cmake` 和 `build-essential` 来构建我们的一些依赖项。在 Linux 上，可以使用以下命令安装：`sudo apt-get install cmake build-essential`。
-
-## 机器人控制相关环境安装[可选，真机验证时需要安装]
-
+## Unitree DDS 环境安装
 针对 Unitree 机器人控制需要安装一些依赖,安装步骤如下:
-
 ```
 git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
 cd unitree_sdk2_python  && pip install -e .
 ```
+
+# 数据采集与转换
 
 ## 数据加载
 加载huggingface上unitreerobotics/G1_ToastedBread_Dataset数据集(v2.0版本)，如果想从加载本地数据使用 root = '.../...' 
@@ -62,49 +60,6 @@ python lerobot/scripts/visualize_dataset.py \
     --repo-id unitreerobotics/G1_ToastedBread_Dataset \
     --episode-index 0
 ```
-
-# 训练
-
-## 运行训练
-
-[请详细阅读官方lerobot训练实例与相关参数](https://github.com/huggingface/lerobot/blob/main/examples/4_train_policy_with_script.md)
-
-
-- 训练 act
-```
-python lerobot/scripts/train.py \
-    --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
-    --policy.type=act 
-```
-
-- 训练 Diffusion Policy
-```
-python lerobot/scripts/train.py \
-  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
-  --policy.type=diffusion
-```
-- 训练 pi0
-```
-python lerobot/scripts/train.py \
-  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
-  --policy.type=pi0
-```
-
-# 真机测试
-
-在 `lerobot/lerobot/scripts` 中添加 `eval_g1.py`，并运行。
-
-```
-python lerobot/lerobot/scripts/eval_g1.py --pretrained-policy-name-or-path "$HOME/unitree_imitation/lerobot/outputs/train/2024-10-17/19-45-30_real_world_act_default/checkpoints/100000/pretrained_modell"
-```
-
-**注意:** `--pretrained-policy-name-or-path`根据自己训练的权重存放位置进行修改； 在`eval_g1.py`中的`eval_policy`函数中有`is_single_hand`变量用于控制是否使用单手或者双手的选项，为`True`是使用单手；`use_left_hand`变量是在使用单手情况下区分使用左手或者右手的，为`True`是使用左手。
-
-**特别提醒:** 如果修改了 LeRobot 的代码，最好是再次进入 `lerobot` 目录中执行`pip install -e .`。
-
-如果使用 Unitree 机器人采集自己的数据并训练可参考下面步骤进行采集和转换。
-
-# 数据采集与转换
 
 ## 数据采集
 
@@ -150,6 +105,46 @@ python utils/convert_unitree_json_to_lerobot.py
     --task "pour coffee"
     --push_to_hub true
 ```
+
+
+# 训练
+
+## 运行训练
+
+[请详细阅读官方lerobot训练实例与相关参数](https://github.com/huggingface/lerobot/blob/main/examples/4_train_policy_with_script.md)
+
+
+- 训练 act
+```
+python lerobot/scripts/train.py \
+    --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+    --policy.type=act 
+```
+
+- 训练 Diffusion Policy
+```
+python lerobot/scripts/train.py \
+  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+  --policy.type=diffusion
+```
+- 训练 pi0
+```
+python lerobot/scripts/train.py \
+  --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
+  --policy.type=pi0
+```
+
+# 真机测试
+
+在 `lerobot/lerobot/scripts` 中添加 `eval_g1.py`，并运行。
+
+```
+python lerobot/scripts/eval.py \
+    --policy.path=tests/outputs/act/checkpoints/000004/pretrained_model \
+    --policy.device=$(DEVICE) \
+```
+
+如果使用 Unitree 机器人采集自己的数据并训练可参考下面步骤进行采集和转换。
 
 
 # 致谢
