@@ -1,6 +1,6 @@
 # 0. 📖 介绍
 
-此存储库是使用`lerobot训练验证`和`unitree相关数据转换`
+此存储库是使用`lerobot训练验证`(支持lerobot 数据集 v2.0以上版本)和`unitree数据转换`
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -44,14 +44,13 @@ cd unitree_sdk2_python  && pip install -e .
 # 2. ⚙️ 数据采集与转换
 
 ## 2.1 🖼️ 数据加载测试
-你可以从 huggingface上加载 `unitreerobotics/G1_ToastedBread_Dataset` 数据集. 如果想从加载本地数据请更改 `root` 参数 
+你可以从 huggingface上加载 [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) 数据集, 默认下载到`~/.cache/huggingface/lerobot/unitreerobotics`. 如果想从加载本地数据请更改 `root` 参数 
 
 ```python
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 import tqdm
 
 episode_index = 1
-
 dataset = LeRobotDataset(repo_id="unitreerobotics/G1_ToastedBread_Dataset")
 
 from_idx = dataset.episode_data_index["from"][episode_index].item()
@@ -153,6 +152,8 @@ python eval_g1.py
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
 # 5. 🤔 问题记录
+
+[为什么要使用lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)
 
 # 6. 🙏 致谢
 

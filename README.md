@@ -2,7 +2,7 @@
 
 # 0. 📖 Introduction
 
-This repository is used for `lerobot training validation` and `unitree related data conversion`
+This repository is used for `lerobot training validation`(Supports LeRobot datasets version 2.0 and above.) and `unitree data conversion`
 
 | Directory          | Description                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -48,7 +48,7 @@ cd unitree_sdk2_python  && pip install -e .
 
 ## 2.1 🖼️ Load Datasets
 
-Load the `unitreerobotics/G1_ToastedBread_Dataset` dataset from Hugging Face. If you want to load data from a local source, please change the `root` parameter.
+Load the [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) dataset from Hugging FaceThe. default download location is `~/.cache/huggingface/lerobot/unitreerobotics`. If you want to load data from a local source, please change the `root` parameter.
 
 ```python
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
@@ -163,6 +163,8 @@ python eval_g1.py
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
 # 5. 🤔 Troubleshooting
+
+[why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)
 
 # 6. 🙏 Acknowledgement
 
