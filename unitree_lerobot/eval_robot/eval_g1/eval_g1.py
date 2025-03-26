@@ -48,16 +48,6 @@ from unitree_lerobot.eval_robot.eval_g1.eval_real_config import EvalRealConfig
 from multiprocessing import Process, shared_memory, Array
 from multiprocessing import shared_memory, Array, Lock
 
-def get_image_processed(cam, img_size=[640, 480]):
-    # realsense return cv2 image, BGR format
-    curr_images = []
-    color_img  = cam
-    color_img = cv2.cvtColor(color_img, cv2.COLOR_BGR2RGB)
-    color_img = cv2.resize(color_img, img_size)         # w, h
-    curr_images.append(color_img)
-    color_img = np.stack(curr_images, axis=0)
-    return color_img
-
 
 # copy from lerobot.common.robot_devices.control_utils import predict_action
 def predict_action(observation, policy, device, use_amp):
@@ -68,7 +58,7 @@ def predict_action(observation, policy, device, use_amp):
     ):
         # Convert to pytorch format: channel first and float32 in [0,1] with batch dimension
         for name in observation:
-            if "image" in name:
+            if "images" in name:
                 observation[name] = observation[name].type(torch.float32) / 255
                 observation[name] = observation[name].permute(2, 0, 1).contiguous()
             observation[name] = observation[name].unsqueeze(0)
@@ -90,7 +80,7 @@ def predict_action(observation, policy, device, use_amp):
 def eval_policy(
     policy: torch.nn.Module,
     dataset: LeRobotDataset,
-) -> dict:
+):
     
     assert isinstance(policy, nn.Module), "Policy must be a PyTorch nn module."
     device = get_device_from_parameters(policy)
@@ -98,7 +88,7 @@ def eval_policy(
     # Reset the policy and environments.
     policy.reset()
 
-    #Shared memory for storing images. The experiment uses a stereo camera, with each image being 480x640x3 (hxwx3).
+    # image
     img_config = {
         'fps': 30,
         'head_camera_type': 'opencv',
@@ -147,10 +137,12 @@ def eval_policy(
     # init pose
     from_idx = dataset.episode_data_index["from"][0].item()
     step = dataset[from_idx]
+    to_idx = dataset.episode_data_index["to"][0].item()
 
     # arm
     arm_ctrl = G1_29_ArmController()
-    init_left_arm_pose = step['observation.state'][:13]
+    init_left_arm_pose = step['observation.state'][:14].cpu().numpy()
+
     # hand
     if robot_config['hand_type'] == "dex3":
         left_hand_array = Array('d', 7, lock = True)          # [input]
@@ -159,8 +151,8 @@ def eval_policy(
         dual_hand_state_array = Array('d', 14, lock = False)  # [output] current left, right hand state(14) data.
         dual_hand_action_array = Array('d', 14, lock = False) # [output] current left, right hand action(14) data.
         hand_ctrl = Dex3_1_Controller(left_hand_array, right_hand_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array)
-        init_left_hand_pose = step['observation.state'][13:19]
-        init_right_hand_pose = step['observation.state'][19:]
+        init_left_hand_pose = step['observation.state'][14:21].cpu().numpy()
+        init_right_hand_pose = step['observation.state'][21:].cpu().numpy()
 
     elif robot_config['hand_type'] == "gripper":
         left_hand_array = Array('d', 1, lock=True)             # [input]
@@ -169,8 +161,8 @@ def eval_policy(
         dual_gripper_state_array = Array('d', 2, lock=False)   # current left, right gripper state(2) data.
         dual_gripper_action_array = Array('d', 2, lock=False)  # current left, right gripper action(2) data.
         gripper_ctrl = Gripper_Controller(left_hand_array, right_hand_array, dual_gripper_data_lock, dual_gripper_state_array, dual_gripper_action_array)
-        init_left_hand_pose = step['observation.state'][13]
-        init_right_hand_pose = step['observation.state'][14]
+        init_left_hand_pose = step['observation.state'][14].cpu().numpy()
+        init_right_hand_pose = step['observation.state'][15].cpu().numpy()
     else:
         pass
 
@@ -185,30 +177,44 @@ def eval_policy(
         right_hand_array[:] = init_right_hand_pose
 
         print(f"wait robot to pose")
-        time.sleep(2)
+        time.sleep(1)
 
-        frequency = 15.0  # 15 Hz
+        frequency = 100.0
 
+        import tqdm
         while True:
-
-            observation = {}
-            img_dic = dict()
+        # for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
+        #     step = dataset[step_idx]
 
             current_tv_image = tv_img_array.copy()
             # wrist image
             if WRIST:
                 current_wrist_image = wrist_img_array.copy()
-            #Get the current image.
+            # #Get the current image.
             left_top_camera = current_tv_image[:, :tv_img_shape[1]//2]
+
             right_top_camera = current_tv_image[:, tv_img_shape[1]//2:]
             if WRIST:
                 left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
                 right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
 
-            img_dic['cam_left_high'] = get_image_processed(left_top_camera)
-            img_dic['cam_right_high'] = get_image_processed(right_top_camera)
-            img_dic['cam_left_wrist'] = get_image_processed(left_wrist_camera)
-            img_dic['cam_right_wrist'] = get_image_processed(right_wrist_camera)
+            if BINOCULAR:
+                left_top_camera = current_tv_image[:, :tv_img_shape[1]//2]
+                right_top_camera = current_tv_image[:, tv_img_shape[1]//2:]
+                if WRIST:
+                    left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
+                    right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
+            else:
+                left_top_camera = current_tv_image
+                if WRIST:
+                    left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
+                    right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
+
+            observation = {}
+            observation[f"observation.images.cam_left_high"] = torch.from_numpy(left_top_camera)
+            observation[f"observation.images.cam_right_high"] = torch.from_numpy(right_top_camera)
+            observation[f"observation.images.cam_left_wrist"] = torch.from_numpy(left_wrist_camera)
+            observation[f"observation.images.cam_right_wrist"] = torch.from_numpy(right_wrist_camera)
 
             # get current state data.
             current_lr_arm_q  = arm_ctrl.get_current_dual_arm_q()
@@ -222,14 +228,8 @@ def eval_policy(
                     left_hand_state = [dual_gripper_state_array[1]]
                     right_hand_state = [dual_gripper_state_array[0]]
             
-            robot_state = np.concatenate((current_lr_arm_q, left_hand_state, right_hand_state), axis=0)
-            observation["pixels"] = img_dic
-            observation["agent_pos"] = robot_state
-            observation = preprocess_observation(observation)
-            observation['observation.state'] = observation['observation.state'].unsqueeze(0)
+            observation["observation.state"] = torch.from_numpy(np.concatenate((current_lr_arm_q, left_hand_state, right_hand_state), axis=0)).float()
 
-            # Numpy array to tensor and changing dictionary keys to LeRobot policy format.
-            observation = preprocess_observation(observation)
             observation = {
                 key: observation[key].to(device, non_blocking=device.type == "cuda") for key in observation
             }
@@ -237,17 +237,16 @@ def eval_policy(
             action = predict_action(
                 observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
             )
-
-
-            print(f"qpose:{np.round(action / np.pi * 180, 1)}")
-
-            arm_ctrl.ctrl_dual_arm(action[:13], np.zeros(14))
+            action = action.cpu().numpy()
+            
+            # exec action
+            arm_ctrl.ctrl_dual_arm(action[:14], np.zeros(14))
             if robot_config['hand_type'] == "dex3":
-                left_hand_array[:] = action[13:19]
-                right_hand_array[:] = action[19:]
+                left_hand_array[:] = action[14:21]
+                right_hand_array[:] = action[21:]
             elif robot_config['hand_type'] == "gripper":
-                left_hand_array[:] = action[13]
-                right_hand_array[:] = action[14]
+                left_hand_array[:] = action[14]
+                right_hand_array[:] = action[15]
         
             time.sleep(1/frequency)
 
@@ -273,8 +272,7 @@ def eval_main(cfg: EvalRealConfig):
     policy.eval()
 
     with torch.no_grad(), torch.autocast(device_type=device.type) if cfg.policy.use_amp else nullcontext():
-        info = eval_policy(policy, dataset)
-    print(info["aggregated"])
+        eval_policy(policy, dataset)
 
     logging.info("End of eval")
 
@@ -282,4 +280,3 @@ def eval_main(cfg: EvalRealConfig):
 if __name__ == "__main__":
     init_logging()
     eval_main()
-

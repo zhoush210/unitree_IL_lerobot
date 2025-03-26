@@ -69,6 +69,8 @@ for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
 `可视化` 
 
 ```bash
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/visualize_dataset.py \
     --repo-id unitreerobotics/G1_ToastedBread_Dataset \
     --episode-index 0
@@ -100,7 +102,7 @@ python lerobot/scripts/visualize_dataset.py \
 生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 `utils/sort_and_rename_folders` 工具对数据进行排序处理
 
 ```bash
-python utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
+python unitree_lerobot/utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
 ### 2.3.2 🔄 转换
@@ -114,7 +116,7 @@ python utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_do
 # --push_to_hub 是否上传到云端 
 # --robot_type  对应的机器人类型 
 
-python utils/convert_unitree_json_to_lerobot.py 
+python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py  
     --raw-dir $HOME/datasets/g1_grabcube_double_hand    
     --repo-id your_name/g1_grabcube_double_hand 
     --robot_type Unitree_G1_Dex3    # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
@@ -130,6 +132,8 @@ python utils/convert_unitree_json_to_lerobot.py
 
 - `训练 act`
 ```
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
     --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
     --policy.type=act 
@@ -137,12 +141,16 @@ python lerobot/scripts/train.py \
 
 - `训练 Diffusion Policy`
 ```
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=diffusion
 ```
 - `训练 pi0`
 ```
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
@@ -151,9 +159,7 @@ python lerobot/scripts/train.py \
 # 4. 🛠️ 真机测试
 
 ```bash
-cd eval_robot/eval_g1
-
-python eval_g1.py  
+python unitree_lerobot/eval_robot/eval_g1/eval_g1.py 
 --policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```

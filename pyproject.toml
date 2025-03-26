@@ -9,7 +9,9 @@ requires-python = ">=3.10,<3.11"
 
 
 [tool.poetry.dependencies]
-unitree_sdk2py = { git = "https://github.com/unitreerobotics/unitree_sdk2_python", rev = "2991deae4efec5be7c4bf0cb4445b92b08f35bda" }
+transformers>=4.45.2,
+tyro>=0.9.10,
+unitree_sdk2py = { git = "https://github.com/unitreerobotics/unitree_sdk2_python", rev = "986f39d54182badc1aa3a0c282bcd898fba4ef20" }
 
 
 [build-system]

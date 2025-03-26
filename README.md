@@ -74,6 +74,8 @@ for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
 `visualization`
 
 ```bash
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/visualize_dataset.py \
     --repo-id unitreerobotics/G1_ToastedBread_Dataset \
     --episode-index 0
@@ -105,7 +107,7 @@ The following conversion steps use this data storage path and format as an examp
 When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the `unitree_utils/sort_and_rename_folders` tool to sort and rename the data accordingly.
 
 ```bash
-python utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
+python unitree_lerobot/utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
 #### 2.3.2 🔄 Conversion
@@ -117,14 +119,14 @@ Convert `Unitree JSON` Dataset to `LeRobot` Format
 # --repo-id     Your unique repo ID on Hugging Face Hub
 # --task        The specific task for the dataset (e.g., "pour coffee")
 # --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
-# --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3)
+# --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
 
-python utils/convert_unitree_json_to_lerobot.py 
-    --raw-dir $HOME/datasets/g1_grabcube_double_hand    
-    --repo-id your_name/g1_grabcube_double_hand 
-    --robot_type Unitree_G1_Dex3    # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
-    --task "pour coffee"
-    --push_to_hub true
+python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
+    --raw-dir $HOME/datasets/g1_grabcube_double_hand \
+    --repo-id your_name/g1_grabcube_double_hand \
+    --robot_type Unitree_G1_Dex3 \ 
+    --task "pour coffee" \
+    --push_to_hub
 ```
 
 
@@ -136,6 +138,8 @@ python utils/convert_unitree_json_to_lerobot.py
 - `Train Act Policy`
 
 ```bash
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
     --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
     --policy.type=act 
@@ -144,6 +148,8 @@ python lerobot/scripts/train.py \
 - `Train Diffusion Policy`
 
 ```bash
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=diffusion
@@ -152,6 +158,8 @@ python lerobot/scripts/train.py \
 - `Train Pi0 Policy`
 
 ```bash
+cd unitree_lerobot/lerobot
+
 python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
@@ -162,9 +170,7 @@ python lerobot/scripts/train.py \
 To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 
 ```bash
-cd eval_robot/eval_g1
-
-python eval_g1.py  
+python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  
 --policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
 --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
