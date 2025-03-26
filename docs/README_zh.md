@@ -1,3 +1,9 @@
+|Unitree Robotics  repositories        | link |
+|---------------------|------|
+| Unitree Datasets   | [unitree datasets](https://huggingface.co/unitreerobotics) |
+| AVP Teleoperate    | [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) |
+
+
 # 0. 📖 介绍
 
 此存储库是使用`lerobot训练验证`(支持lerobot 数据集 v2.0以上版本)和`unitree数据转换`
@@ -153,7 +159,10 @@ python eval_g1.py
 ```
 # 5. 🤔 问题记录
 
-[为什么要使用lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)
+| problem                      | resolve                                                                                           |
+|----------------------------------|-------------------------------------------------------------------------------------------------------|
+| why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
+| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url: https://huggingface.co/api/datasets/unitreerobotics/G1_ToastedBread_Dataset/refs (Request ID: Root=1-67e3c42b-2ebdf5944eb5371b3898ead4;6da2ec08-515b-497a-8145-065e5d1d95b9)                       |  `huggingface-cli login`  |
 
 # 6. 🙏 致谢
 

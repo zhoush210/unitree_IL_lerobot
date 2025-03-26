@@ -1,5 +1,11 @@
 **Read this in other languages: [中文](./docs/README_zh.md).**
 
+|Unitree Robotics  repositories        | link |
+|---------------------|------|
+| Unitree Datasets   | [unitree datasets](https://huggingface.co/unitreerobotics) |
+| AVP Teleoperate    | [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) |
+
+
 # 0. 📖 Introduction
 
 This repository is used for `lerobot training validation`(Supports LeRobot datasets version 2.0 and above.) and `unitree data conversion`
@@ -29,10 +35,10 @@ conda create -y -n unitree_lerobot python=3.10
 conda activate unitree_lerobot
 
 # Install LeRobot
-cd lerobot && pip install -e .
+cd unitree_lerobot/lerobot && pip install -e .
 
 # Install unitree_lerobot
-cd .. && pip install -e .
+cd ../../ && pip install -e .
 ```
 
 ## 1.2 🕹️ unitree_sdk2_python
@@ -164,7 +170,11 @@ python eval_g1.py
 ```
 # 5. 🤔 Troubleshooting
 
-[why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)
+
+| problem                      | resolve                                                                                           |
+|----------------------------------|-------------------------------------------------------------------------------------------------------|
+| why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
+| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url: https://huggingface.co/api/datasets/unitreerobotics/G1_ToastedBread_Dataset/refs (Request ID: Root=1-67e3c42b-2ebdf5944eb5371b3898ead4;6da2ec08-515b-497a-8145-065e5d1d95b9)                       |  `huggingface-cli login`  |
 
 # 6. 🙏 Acknowledgement
 
