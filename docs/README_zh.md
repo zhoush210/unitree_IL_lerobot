@@ -7,6 +7,7 @@
 # 0. 📖 介绍
 
 此存储库是使用`lerobot训练验证`(支持lerobot 数据集 v2.0以上版本)和`unitree数据转换`
+`如果您有任何疑问，想法或建议，请随时随时提出它们。我们将尽最大努力解决和实现。`
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +103,8 @@ python lerobot/scripts/visualize_dataset.py \
 生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 `utils/sort_and_rename_folders` 工具对数据进行排序处理
 
 ```bash
-python unitree_lerobot/utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
+python unitree_lerobot/utils/sort_and_rename_folders.py \
+        --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
 ### 2.3.2 🔄 转换
@@ -159,20 +161,35 @@ python lerobot/scripts/train.py \
 # 4. 🛠️ 真机测试
 
 ```bash
-python unitree_lerobot/eval_robot/eval_g1/eval_g1.py 
---policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
---repo_id=unitreerobotics/G1_ToastedBread_Dataset
+# --policy.path 训练保存模型路径
+# --repo_id     训练加载的数据集(为什么要用? 加载数据集中第一帧状态做为起始动作)
+
+python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  \
+    --policy.path=unitree_lerobot/lerobot/outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model \
+    --repo_id=unitreerobotics/G1_ToastedBread_Dataset
+
+
+# 如果你想验证模型在数据集上的表现 使用下面去测试
+python unitree_lerobot/eval_robot/eval_g1/eval_g1_dataset.py  \
+    --policy.path=unitree_lerobot/lerobot/outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model \
+    --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
+
 # 5. 🤔 问题记录
 
 | problem                      | resolve                                                                                           |
 |----------------------------------|-------------------------------------------------------------------------------------------------------|
 | why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
-| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url: https://huggingface.co/api/datasets/unitreerobotics/G1_ToastedBread_Dataset/refs (Request ID: Root=1-67e3c42b-2ebdf5944eb5371b3898ead4;6da2ec08-515b-497a-8145-065e5d1d95b9)                       |  `huggingface-cli login`  |
+| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url:|  `huggingface-cli login`  |
+| Unknown encoder 'libsvtav1' Error selecting an encoder|`conda install -c conda-forge ffmpeg`|
+| FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'|`conda install -c conda-forge ffmpeg`|
+| RuntimeError: Could not load libtorchcodec. Likely causes:1. FFmpeg is not properly installed in your environment. We supportversions 4, 5, 6 and 7. |`conda install -c conda-forge ffmpeg`|
+|Access to model google/paligemma-3b-pt-224 is restricted. You must have access to it and be authenticated to access it. Please log in.|`huggingface-cli login` and restricted|
+
 
 # 6. 🙏 致谢
 
 此代码基于以下开源代码库进行构建。请访问以下链接查看相关的许可证：
 
 1. https://github.com/huggingface/lerobot
-2. https://github.com/unitreerobotics/unitree_dds_wrapper
+2. https://github.com/unitreerobotics/unitree_sdk2_python

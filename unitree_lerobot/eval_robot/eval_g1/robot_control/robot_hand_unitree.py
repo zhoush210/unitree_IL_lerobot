@@ -178,6 +178,9 @@ class Dex3_1_Controller:
                     with dual_hand_data_lock:
                         dual_hand_state_array[:] = state_data
                         dual_hand_action_array[:] = action_data
+                
+                left_q_target = left_hand_mat
+                right_q_target = right_hand_mat
 
                 self.ctrl_dual_hand(left_q_target, right_q_target)
                 current_time = time.time()

@@ -1,34 +1,22 @@
-#!/usr/bin/env python
+''''
+Refer to:   lerobot/lerobot/scripts/eval.py
+            lerobot/lerobot/scripts/econtrol_robot.py
+            lerobot/common/robot_devices/control_utils.py
+'''
 
-# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-import cv2
-import json
-import logging
 import time
-from contextlib import nullcontext
-from dataclasses import asdict
-from pathlib import Path
-from pprint import pformat
-from copy import copy
+import torch
+import logging
 import threading
 import numpy as np
-import torch
+from copy import copy
+from pprint import pformat
+from dataclasses import asdict
 from torch import Tensor, nn
+from contextlib import nullcontext
+from multiprocessing import Process, shared_memory, Array
+from multiprocessing import shared_memory, Array, Lock
 
-from lerobot.common.envs.utils import preprocess_observation
 from lerobot.common.policies.factory import make_policy
 from lerobot.common.policies.utils import get_device_from_parameters
 from lerobot.common.utils.utils import (
@@ -38,15 +26,10 @@ from lerobot.common.utils.utils import (
 from lerobot.configs import parser
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
-
 from unitree_lerobot.eval_robot.eval_g1.image_server.image_client import ImageClient
 from unitree_lerobot.eval_robot.eval_g1.robot_control.robot_arm import G1_29_ArmController
 from unitree_lerobot.eval_robot.eval_g1.robot_control.robot_hand_unitree import Dex3_1_Controller, Gripper_Controller
 from unitree_lerobot.eval_robot.eval_g1.eval_real_config import EvalRealConfig
-
-
-from multiprocessing import Process, shared_memory, Array
-from multiprocessing import shared_memory, Array, Lock
 
 
 # copy from lerobot.common.robot_devices.control_utils import predict_action
@@ -179,42 +162,28 @@ def eval_policy(
         print(f"wait robot to pose")
         time.sleep(1)
 
-        frequency = 100.0
+        frequency = 50.0
 
-        import tqdm
         while True:
-        # for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
-        #     step = dataset[step_idx]
 
+            # Get images
             current_tv_image = tv_img_array.copy()
-            # wrist image
-            if WRIST:
-                current_wrist_image = wrist_img_array.copy()
-            # #Get the current image.
-            left_top_camera = current_tv_image[:, :tv_img_shape[1]//2]
+            current_wrist_image = wrist_img_array.copy() if WRIST else None
 
-            right_top_camera = current_tv_image[:, tv_img_shape[1]//2:]
-            if WRIST:
-                left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
-                right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
+            # Assign image data
+            left_top_camera = current_tv_image[:, :tv_img_shape[1] // 2] if BINOCULAR else current_tv_image
+            right_top_camera = current_tv_image[:, tv_img_shape[1] // 2:] if BINOCULAR else None
+            left_wrist_camera, right_wrist_camera = (
+                (current_wrist_image[:, :wrist_img_shape[1] // 2], current_wrist_image[:, wrist_img_shape[1] // 2:])
+                if WRIST else (None, None)
+            )
 
-            if BINOCULAR:
-                left_top_camera = current_tv_image[:, :tv_img_shape[1]//2]
-                right_top_camera = current_tv_image[:, tv_img_shape[1]//2:]
-                if WRIST:
-                    left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
-                    right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
-            else:
-                left_top_camera = current_tv_image
-                if WRIST:
-                    left_wrist_camera = current_wrist_image[:, :wrist_img_shape[1]//2]
-                    right_wrist_camera = current_wrist_image[:, wrist_img_shape[1]//2:]
-
-            observation = {}
-            observation[f"observation.images.cam_left_high"] = torch.from_numpy(left_top_camera)
-            observation[f"observation.images.cam_right_high"] = torch.from_numpy(right_top_camera)
-            observation[f"observation.images.cam_left_wrist"] = torch.from_numpy(left_wrist_camera)
-            observation[f"observation.images.cam_right_wrist"] = torch.from_numpy(right_wrist_camera)
+            observation = {
+                "observation.images.cam_left_high": torch.from_numpy(left_top_camera),
+                "observation.images.cam_right_high": torch.from_numpy(right_top_camera) if BINOCULAR else None,
+                "observation.images.cam_left_wrist": torch.from_numpy(left_wrist_camera) if WRIST else None,
+                "observation.images.cam_right_wrist": torch.from_numpy(right_wrist_camera) if WRIST else None,
+            }
 
             # get current state data.
             current_lr_arm_q  = arm_ctrl.get_current_dual_arm_q()

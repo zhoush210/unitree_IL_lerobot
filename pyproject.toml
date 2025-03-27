@@ -7,12 +7,10 @@ license = "Apache-2.0"
 packages = [{include = "unitree_lerobot"}]
 requires-python = ">=3.10,<3.11"
 
-
 [tool.poetry.dependencies]
-transformers>=4.45.2,
-tyro>=0.9.10,
-unitree_sdk2py = { git = "https://github.com/unitreerobotics/unitree_sdk2_python", rev = "986f39d54182badc1aa3a0c282bcd898fba4ef20" }
-
+transformers = "^4.45.2"
+tyro = "^0.9.10"
+matplotlib = "^3.9.0"
 
 [build-system]
 requires = ["poetry-core"]

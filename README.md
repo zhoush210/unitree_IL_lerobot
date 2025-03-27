@@ -8,7 +8,8 @@
 
 # 0. 📖 Introduction
 
-This repository is used for `lerobot training validation`(Supports LeRobot datasets version 2.0 and above.) and `unitree data conversion`
+This repository is used for `lerobot training validation`(Supports LeRobot datasets version 2.0 and above.) and `unitree data conversion`.
+`If you have any questions, ideas or suggestions that you want to realize, please feel free to raise them at any time. We will do our best to solve and implement them.`
 
 | Directory          | Description                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -107,7 +108,8 @@ The following conversion steps use this data storage path and format as an examp
 When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the `unitree_utils/sort_and_rename_folders` tool to sort and rename the data accordingly.
 
 ```bash
-python unitree_lerobot/utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
+python unitree_lerobot/utils/sort_and_rename_folders.py \
+        --data_dir $HOME/datasets/g1_grabcube_double_hand
 ```
 
 #### 2.3.2 🔄 Conversion
@@ -170,9 +172,16 @@ python lerobot/scripts/train.py \
 To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 
 ```bash
-python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  
---policy.path=outputs/train/2025/16_diffusion/checkpoints/100000/pretrained_model 
---repo_id=unitreerobotics/G1_ToastedBread_Dataset
+# --policy.path Path to the trained model checkpoint
+# --repo_id     Dataset repository ID (Why use it? The first frame state of the dataset is loaded as the initial state)
+python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  \
+    --policy.path=unitree_lerobot/lerobot/outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model \
+    --repo_id=unitreerobotics/G1_ToastedBread_Dataset
+
+# If you want to evaluate the model's performance on the dataset, use the command below for testing
+python unitree_lerobot/eval_robot/eval_g1/eval_g1_dataset.py  \
+    --policy.path=unitree_lerobot/lerobot/outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model \
+    --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
 # 5. 🤔 Troubleshooting
 
@@ -180,11 +189,16 @@ python unitree_lerobot/eval_robot/eval_g1/eval_g1.py
 | problem                      | resolve                                                                                           |
 |----------------------------------|-------------------------------------------------------------------------------------------------------|
 | why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
-| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url: https://huggingface.co/api/datasets/unitreerobotics/G1_ToastedBread_Dataset/refs (Request ID: Root=1-67e3c42b-2ebdf5944eb5371b3898ead4;6da2ec08-515b-497a-8145-065e5d1d95b9)                       |  `huggingface-cli login`  |
+| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url:|  `huggingface-cli login`  |
+| Unknown encoder 'libsvtav1' Error selecting an encoder|`conda install -c conda-forge ffmpeg`|
+| FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'|`conda install -c conda-forge ffmpeg`|
+| RuntimeError: Could not load libtorchcodec. Likely causes:1. FFmpeg is not properly installed in your environment. We supportversions 4, 5, 6 and 7. |`conda install -c conda-forge ffmpeg`|
+|Access to model google/paligemma-3b-pt-224 is restricted. You must have access to it and be authenticated to access it. Please log in.|`huggingface-cli login` and restricted|
+
 
 # 6. 🙏 Acknowledgement
 
 This code builds upon following open-source code-bases. Please visit the URLs to see the respective LICENSES:
 
 1. https://github.com/huggingface/lerobot
-2. https://github.com/unitreerobotics/unitree_dds_wrapper
+2. https://github.com/unitreerobotics/unitree_sdk2_python

@@ -1,25 +1,37 @@
 """
-Script to convert Aloha hdf5 data to the LeRobot dataset v2.0 format.
+Script to Sort and Rename.
 
-Example usage: uv run examples/aloha_real/convert_aloha_data_to_lerobot.py --raw-dir /path/to/raw/data --repo-id <org>/<dataset-name>
+# --raw-dir     Corresponds to the directory of your JSON dataset
+# --repo-id     Your unique repo ID on Hugging Face Hub
+# --task        The specific task for the dataset (e.g., "pour coffee")
+# --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
+# --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
+
+python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
+    --raw-dir $HOME/datasets/g1_grabcube_double_hand \
+    --repo-id your_name/g1_grabcube_double_hand \
+    --robot_type Unitree_G1_Dex3 \ 
+    --task "pour coffee" \
+    --push_to_hub
 """
-
-import dataclasses
-from pathlib import Path
-import shutil
-from typing import Literal, List, Dict
-from lerobot.common.constants import HF_LEROBOT_HOME
-
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-import numpy as np
-import torch
+import os
+import re
+import cv2
 import tqdm
 import tyro
-import os
 import json
-import cv2
 import glob
-import re
+import torch
+import dataclasses
+import shutil
+import numpy as np
+from pathlib import Path
+from typing import Literal, List, Dict
+
+from lerobot.common.constants import HF_LEROBOT_HOME
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+
+
 @dataclasses.dataclass(frozen=True)
 class DatasetConfig:
     use_videos: bool = True

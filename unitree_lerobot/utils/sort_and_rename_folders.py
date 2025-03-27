@@ -1,3 +1,9 @@
+"""
+Script to convert Unitree json data to the LeRobot dataset v2.0 format.
+
+python unitree_lerobot/utils/sort_and_rename_folders.py --data_dir $HOME/datasets/g1_grabcube_double_hand
+"""
+
 import os
 import argparse
 import uuid
