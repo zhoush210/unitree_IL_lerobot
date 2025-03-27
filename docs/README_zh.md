@@ -159,7 +159,7 @@ python lerobot/scripts/train.py \
 ```
 
 # 4. 🛠️ 真机测试
-
+[如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 ```bash
 # --policy.path 训练保存模型路径
 # --repo_id     训练加载的数据集(为什么要用? 加载数据集中第一帧状态做为起始动作)

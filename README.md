@@ -171,6 +171,8 @@ python lerobot/scripts/train.py \
 
 To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 
+[To open the image_server, follow these steps](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
+
 ```bash
 # --policy.path Path to the trained model checkpoint
 # --repo_id     Dataset repository ID (Why use it? The first frame state of the dataset is loaded as the initial state)
@@ -183,6 +185,7 @@ python unitree_lerobot/eval_robot/eval_g1/eval_g1_dataset.py  \
     --policy.path=unitree_lerobot/lerobot/outputs/train/2025-03-25/22-11-16_diffusion/checkpoints/100000/pretrained_model \
     --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
+
 # 5. 🤔 Troubleshooting
 
 
