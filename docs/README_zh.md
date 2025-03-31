@@ -7,7 +7,8 @@
 # 0. 📖 介绍
 
 此存储库是使用`lerobot训练验证`(支持lerobot 数据集 v2.0以上版本)和`unitree数据转换`
-`如果您有任何疑问，想法或建议，请随时随时提出它们。我们将尽最大努力解决和实现。`
+
+`❗Tips：如果您有任何疑问，想法或建议，请随时随时提出它们。我们将尽最大努力解决和实现。`
 
 | 目录          | 说明                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -83,7 +84,7 @@ python lerobot/scripts/visualize_dataset.py \
 
 ## 2.3 🛠️ 数据转换
 
-使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。假如采集的数据存放在`$HOME/datasets/`目录中的`g1_grabcube_double_hand` 目录中，格式如下:
+使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。假如采集的数据存放在`$HOME/datasets/g1_grabcube_double_hand` 目录中，格式如下:
 
     g1_grabcube_double_hand/        #任务名称
     ├── episode_0001                #第一条轨迹

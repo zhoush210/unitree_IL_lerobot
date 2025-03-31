@@ -9,7 +9,8 @@
 # 0. 📖 Introduction
 
 This repository is used for `lerobot training validation`(Supports LeRobot datasets version 2.0 and above.) and `unitree data conversion`.
-`If you have any questions, ideas or suggestions that you want to realize, please feel free to raise them at any time. We will do our best to solve and implement them.`
+
+`❗Tips： If you have any questions, ideas or suggestions that you want to realize, please feel free to raise them at any time. We will do our best to solve and implement them.`
 
 | Directory          | Description                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -87,7 +88,7 @@ If you want to record your own dataset. The open-source teleoperation project [a
 
 ## 2.3 🛠️ Data Conversion
 
-The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format. Assuming the collected data is stored in the `$HOME/datasets/` directory under the `g1_grabcube_double_hand` directory, the format is as follows
+The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format. Assuming the collected data is stored in the `$HOME/datasets/g1_grabcube_double_hand`, the format is as follows
 
     g1_grabcube_double_hand/        # Task name
     │
