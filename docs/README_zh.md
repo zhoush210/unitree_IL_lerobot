@@ -51,7 +51,7 @@ cd unitree_sdk2_python  && pip install -e .
 # 2. ⚙️ 数据采集与转换
 
 ## 2.1 🖼️ 数据加载测试
-你可以从 huggingface上加载 [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) 数据集, 默认下载到`~/.cache/huggingface/lerobot/unitreerobotics`. 如果想从加载本地数据请更改 `root` 参数 
+如果你想加载我们已经录制好的数据集, 你可以从 huggingface上加载 [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) 数据集, 默认下载到`~/.cache/huggingface/lerobot/unitreerobotics`. 如果想从加载本地数据请更改 `root` 参数 
 
 ```python
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
@@ -79,13 +79,11 @@ python lerobot/scripts/visualize_dataset.py \
 
 ## 2.2 🔨 数据采集
 
-开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)可以使用 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)项目。
+如果你想录制自己的数据集, 可以使用开源的遥操作项目[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate) 对 Unitree G1 人形机器人进行数据采集，具体可参考[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)项目。
 
 ## 2.3 🛠️ 数据转换
 
-使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。
-
-以下转换步骤以此数据的存储地址和格式为例。假如采集的数据存放在`$HOME/datasets/`目录中的`g1_grabcube_double_hand` 目录中，格式如下:
+使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。假如采集的数据存放在`$HOME/datasets/`目录中的`g1_grabcube_double_hand` 目录中，格式如下:
 
     g1_grabcube_double_hand/        #任务名称
     ├── episode_0001                #第一条轨迹
@@ -100,7 +98,7 @@ python lerobot/scripts/visualize_dataset.py \
 
 ### 2.3.1 🔀 排序和重命名
 
-生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，可利用 `utils/sort_and_rename_folders` 工具对数据进行排序处理
+生成 lerobot 的数据集时，最好保证数据的`episode_0`命名是从 0 开始且是连续的，使用下面脚本对数据进行排序处理
 
 ```bash
 python unitree_lerobot/utils/sort_and_rename_folders.py \
@@ -109,7 +107,7 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 
 ### 2.3.2 🔄 转换
 
-转换`json`格式到`lerobot`格式
+转换`json`格式到`lerobot`格式，你可以根据 [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154) 去定义自己的 `robot_type`
 
 ```bash
 # --raw-dir     对应json的数据集目录
@@ -158,7 +156,7 @@ python lerobot/scripts/train.py \
   --policy.type=pi0
 ```
 
-# 4. 🛠️ 真机测试
+# 4. 🤖 真机测试
 [如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 ```bash
 # --policy.path 训练保存模型路径
@@ -175,16 +173,14 @@ python unitree_lerobot/eval_robot/eval_g1/eval_g1_dataset.py  \
     --repo_id=unitreerobotics/G1_ToastedBread_Dataset
 ```
 
-# 5. 🤔 问题记录
+# 5. 🤔 Troubleshooting
 
-| problem                      | resolve                                                                                           |
-|----------------------------------|-------------------------------------------------------------------------------------------------------|
-| why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
-| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url:|  `huggingface-cli login`  |
-| Unknown encoder 'libsvtav1' Error selecting an encoder|`conda install -c conda-forge ffmpeg`|
-| FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'|`conda install -c conda-forge ffmpeg`|
-| RuntimeError: Could not load libtorchcodec. Likely causes:1. FFmpeg is not properly installed in your environment. We supportversions 4, 5, 6 and 7. |`conda install -c conda-forge ffmpeg`|
-|Access to model google/paligemma-3b-pt-224 is restricted. You must have access to it and be authenticated to access it. Please log in.|`huggingface-cli login` and restricted|
+| Problem | Solution |
+|---------|----------|
+| **Why use `LeRobot v2.0`?** | [Explanation](https://github.com/huggingface/lerobot/pull/461) |
+| **401 Client Error: Unauthorized** (`huggingface_hub.errors.HfHubHTTPError`) | Run `huggingface-cli login` to authenticate. |
+| **FFmpeg-related errors:**  <br> Q1: `Unknown encoder 'libsvtav1'` <br> Q2: `FileNotFoundError: No such file or directory: 'ffmpeg'` <br> Q3: `RuntimeError: Could not load libtorchcodec. Likely causes: FFmpeg is not properly installed.` | Install FFmpeg: <br> `conda install -c conda-forge ffmpeg` |
+| **Access to model `google/paligemma-3b-pt-224` is restricted.** | Run `huggingface-cli login` and request access if needed. |
 
 
 # 6. 🙏 致谢

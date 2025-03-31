@@ -54,15 +54,14 @@ cd unitree_sdk2_python  && pip install -e .
 # 2. ⚙️ Data Collection and Conversion
 
 ## 2.1 🖼️ Load Datasets
-
-Load the [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) dataset from Hugging FaceThe. default download location is `~/.cache/huggingface/lerobot/unitreerobotics`. If you want to load data from a local source, please change the `root` parameter.
+If you want to directly load the dataset we have already recorded,
+Load the [`unitreerobotics/G1_ToastedBread_Dataset`](https://huggingface.co/datasets/unitreerobotics/G1_ToastedBread_Dataset) dataset from Hugging Face. The default download location is `~/.cache/huggingface/lerobot/unitreerobotics`. If you want to load data from a local source, please change the `root` parameter.
 
 ```python
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 import tqdm
 
 episode_index = 1
-
 dataset = LeRobotDataset(repo_id="unitreerobotics/G1_ToastedBread_Dataset")
 
 from_idx = dataset.episode_data_index["from"][episode_index].item()
@@ -84,13 +83,11 @@ python lerobot/scripts/visualize_dataset.py \
 
 ## 2.2 🔨 Data Collection
 
-The open-source teleoperation project [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) can be used to collect data using the Unitree G1 humanoid robot. For more details, please refer to the [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) project.
+If you want to record your own dataset. The open-source teleoperation project [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) can be used to collect data using the Unitree G1 humanoid robot. For more details, please refer to the [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) project.
 
 ## 2.3 🛠️ Data Conversion
 
-The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format.
-
-The following conversion steps use this data storage path and format as an example. Assuming the collected data is stored in the `$HOME/datasets/` directory under the `g1_grabcube_double_hand` directory, the format is as follows
+The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format. Assuming the collected data is stored in the `$HOME/datasets/` directory under the `g1_grabcube_double_hand` directory, the format is as follows
 
     g1_grabcube_double_hand/        # Task name
     │
@@ -105,7 +102,8 @@ The following conversion steps use this data storage path and format as an examp
 
 ### 2.3.1 🔀 Sort and Rename
 
-When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the `unitree_utils/sort_and_rename_folders` tool to sort and rename the data accordingly.
+When generating datasets for LeRobot, it is recommended to ensure that the data naming convention, starting from `episode_0`, is sequential and continuous. You can use the following script to `sort and rename` the data accordingly.
+
 
 ```bash
 python unitree_lerobot/utils/sort_and_rename_folders.py \
@@ -114,8 +112,7 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 
 #### 2.3.2 🔄 Conversion
 
-Convert `Unitree JSON` Dataset to `LeRobot` Format
-
+Convert `Unitree JSON` Dataset to `LeRobot` Format. You can define your own `robot_type` based on [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154).
 ```bash
 # --raw-dir     Corresponds to the directory of your JSON dataset
 # --repo-id     Your unique repo ID on Hugging Face Hub
@@ -167,7 +164,7 @@ python lerobot/scripts/train.py \
   --policy.type=pi0
 ```
 
-# 4. 🛠️ Real-World Testing
+# 4. 🤖 Real-World Testing
 
 To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 
@@ -188,15 +185,12 @@ python unitree_lerobot/eval_robot/eval_g1/eval_g1_dataset.py  \
 
 # 5. 🤔 Troubleshooting
 
-
-| problem                      | resolve                                                                                           |
-|----------------------------------|-------------------------------------------------------------------------------------------------------|
-| why use lerobotv2.0                    | [why use lerobotv2.0](https://github.com/huggingface/lerobot/pull/461)|
-| huggingface_hub.errors.HfHubHTTPError: 401 Client Error: Unauthorized for url:|  `huggingface-cli login`  |
-| Unknown encoder 'libsvtav1' Error selecting an encoder|`conda install -c conda-forge ffmpeg`|
-| FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'|`conda install -c conda-forge ffmpeg`|
-| RuntimeError: Could not load libtorchcodec. Likely causes:1. FFmpeg is not properly installed in your environment. We supportversions 4, 5, 6 and 7. |`conda install -c conda-forge ffmpeg`|
-|Access to model google/paligemma-3b-pt-224 is restricted. You must have access to it and be authenticated to access it. Please log in.|`huggingface-cli login` and restricted|
+| Problem | Solution |
+|---------|----------|
+| **Why use `LeRobot v2.0`?** | [Explanation](https://github.com/huggingface/lerobot/pull/461) |
+| **401 Client Error: Unauthorized** (`huggingface_hub.errors.HfHubHTTPError`) | Run `huggingface-cli login` to authenticate. |
+| **FFmpeg-related errors:**  <br> Q1: `Unknown encoder 'libsvtav1'` <br> Q2: `FileNotFoundError: No such file or directory: 'ffmpeg'` <br> Q3: `RuntimeError: Could not load libtorchcodec. Likely causes: FFmpeg is not properly installed.` | Install FFmpeg: <br> `conda install -c conda-forge ffmpeg` |
+| **Access to model `google/paligemma-3b-pt-224` is restricted.** | Run `huggingface-cli login` and request access if needed. |
 
 
 # 6. 🙏 Acknowledgement
