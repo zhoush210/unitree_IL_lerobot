@@ -1,122 +1,26 @@
 """
-Script Json to Lerobot.
+Script Json to h5.
 
-# --raw-dir     Corresponds to the directory of your JSON dataset
-# --repo-id     Your unique repo ID on Hugging Face Hub
-# --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
-# --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
+# --data_dirs   Corresponds to the directory of your JSON dataset
+# --output_dir  Whether or not to upload the dataset to Hugging Face Hub (true or false)
+# --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_Z1_Single, Unitree_G1_Gripper)
 
-python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
-    --raw-dir $HOME/datasets/g1_grabcube_double_hand \
-    --repo-id your_name/g1_grabcube_double_hand \
-    --robot_type Unitree_G1_Dex3 \ 
-    --push_to_hub
+python unitree_lerobot/utils/convert_unitree_json_to_h5.py \
+    --data_dirs $HOME/datasets/json \
+    --output_dir $HOME/datasets/h5 \
+    --robot_type Unitree_G1_Dex3
 """
 import os
-import cv2
-import tqdm
 import tyro
 import json
+import h5py
+import cv2
+import tqdm
 import glob
-import dataclasses
-import shutil
 import numpy as np
-from pathlib import Path
+from typing import  List, Dict, Optional
 from collections import defaultdict
-from typing import Literal, List, Dict, Optional
-
-from lerobot.common.constants import HF_LEROBOT_HOME
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-
 from unitree_lerobot.utils.constants import ROBOT_CONFIGS
-
-
-@dataclasses.dataclass(frozen=True)
-class DatasetConfig:
-    use_videos: bool = True
-    tolerance_s: float = 0.0001
-    image_writer_processes: int = 10
-    image_writer_threads: int = 5
-    video_backend: str | None = None
-
-
-DEFAULT_DATASET_CONFIG = DatasetConfig()
-
-
-def create_empty_dataset(
-    repo_id: str,
-    robot_type: str,
-    mode: Literal["video", "image"] = "video",
-    *,
-    has_velocity: bool = False,
-    has_effort: bool = False,
-    dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
-) -> LeRobotDataset:
-    
-    motors = ROBOT_CONFIGS[robot_type].motors
-    cameras = ROBOT_CONFIGS[robot_type].cameras
-
-    features = {
-        "observation.state": {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        },
-        "action": {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        },
-    }
-
-    if has_velocity:
-        features["observation.velocity"] = {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        }
-
-    if has_effort:
-        features["observation.effort"] = {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        }
-
-    for cam in cameras:
-        features[f"observation.images.{cam}"] = {
-            "dtype": mode,
-            "shape": (3, 480, 640),
-            "names": [
-                "channels",
-                "height",
-                "width",
-            ],
-        }
-
-    if Path(HF_LEROBOT_HOME / repo_id).exists():
-        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
-
-    return LeRobotDataset.create(
-        repo_id=repo_id,
-        fps=30,
-        robot_type=robot_type,
-        features=features,
-        use_videos=dataset_config.use_videos,
-        tolerance_s=dataset_config.tolerance_s,
-        image_writer_processes=dataset_config.image_writer_processes,
-        image_writer_threads=dataset_config.image_writer_threads,
-        video_backend=dataset_config.video_backend,
-    )
-
 
 class JsonDataset:
     def __init__(self, data_dir: str, robot_type: str) -> None:
@@ -208,15 +112,9 @@ class JsonDataset:
 
         for camera in cameras:
             image_key = self.camera_to_image_key.get(camera)
-            if image_key is None:
-                continue
 
             for sample_data in episode_data['data']:
-                relative_path = sample_data['colors'].get(camera)
-                if not relative_path:
-                    continue
-
-                image_path = os.path.join(episode_path, relative_path)
+                image_path = os.path.join(episode_path, sample_data['colors'].get(camera))
                 if not os.path.exists(image_path):
                     raise FileNotFoundError(f"Image path does not exist: {image_path}")
 
@@ -268,78 +166,70 @@ class JsonDataset:
                 'data_cfg':data_cfg}
 
 
-def populate_dataset(
-    dataset: LeRobotDataset,
-    raw_dir: list[Path],
-    robot_type: str,
-) -> LeRobotDataset:
-
-    json_dataset = JsonDataset(raw_dir, robot_type)
-    for i in tqdm.tqdm(range(len(json_dataset))):
-        episode = json_dataset.get_item(i)
+def json_to_h5(data_dirs: str, output_dir: str, robot_type: str,) -> None:
+    """Convert JSON episode data to HDF5 format."""
+    dataset = JsonDataset(data_dirs, robot_type)
+    for i in tqdm.tqdm(range(len(dataset))):
+        episode = dataset.get_item(i)
 
         state = episode["state"]
         action = episode["action"]
+        qvel = np.zeros_like(episode["state"])
         cameras = episode["cameras"]
         task = episode["task"]
         episode_length = episode["episode_length"]
+        episode_idx = episode["episode_idx"]
+        data_cfg = episode["data_cfg"]
 
-        num_frames = episode_length
-        for i in range(num_frames):
-            frame = {
-                "observation.state": state[i],
-                "action": action[i],
-                "task": task
-            }
+        # Prepare data dictionary
+        data_dict = {
+            '/observations/qpos': [state],
+            '/observations/qvel': [qvel],
+            '/action': [action],
+            **{f'/observations/images/{k}': [v] for k, v in cameras.items()}
+        }
 
-            for camera, img_array in cameras.items():
-                frame[f"observation.images.{camera}"] = img_array[i]
+        # Create output directory if needed
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Generate output path
+        h5_path = os.path.join(output_dir, f'episode_{episode_idx}.hdf5')
 
-            dataset.add_frame(frame)
+        # Write to HDF5 with compression
+        with h5py.File(h5_path, 'w', rdcc_nbytes=1024**2*2, libver='latest') as root:
+            # Set attributes
+            root.attrs['sim'] = False
+            root.attrs['robot_type'] = robot_type
 
-        dataset.save_episode()
-
-    return dataset
-
-
-def json_to_lerobot(
-    raw_dir: Path,
-    repo_id: str,
-    robot_type: str,        # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
-    *,
-    push_to_hub: bool = False,
-    mode: Literal["video", "image"] = "video",
-    dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
-):
-
-    if (HF_LEROBOT_HOME / repo_id).exists():
-        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
-
-    dataset = create_empty_dataset(
-        repo_id,
-        robot_type=robot_type,
-        mode=mode,
-        has_effort=False,
-        has_velocity=False,
-        dataset_config=dataset_config,
-    )
-    dataset = populate_dataset(
-        dataset,
-        raw_dir,
-        robot_type=robot_type,
-    )
-
-    if push_to_hub:
-        dataset.push_to_hub(upload_large_folder = True)
-
-
-def local_push_to_hub(
-        repo_id: str,
-        root_path: Path,):
-
-    dataset = LeRobotDataset(repo_id = repo_id, root = root_path)
-    dataset.push_to_hub(upload_large_folder = True)
+            # Create datasets
+            obs = root.create_group('observations')
+            image = obs.create_group('images')
+            
+            # Camera images
+            for cam_name, images in cameras.items():
+                image.create_dataset(
+                    cam_name,
+                    shape=(episode_length, data_cfg['cam_height'], data_cfg['cam_width'], 3),
+                    dtype='uint8',
+                    chunks=(1, data_cfg['cam_height'], data_cfg['cam_width'], 3),
+                    compression="gzip"
+                )
+                root[f'/observations/images/{cam_name}'][...] = images
+            
+            # State and action data
+            obs.create_dataset('qpos',(episode_length, data_cfg["state_dim"]), dtype='float32', compression="gzip")
+            obs.create_dataset('qvel', (episode_length, data_cfg["state_dim"]), dtype='float32', compression="gzip")
+            root.create_dataset('action', (episode_length, data_cfg["action_dim"]), dtype='float32', compression="gzip")
+            
+            # Metadata
+            root.create_dataset('is_edited', (1,), dtype='uint8')
+            substep_reasonings = root.create_dataset('substep_reasonings', (episode_length,), dtype=h5py.string_dtype(encoding='utf-8'),compression="gzip")
+            root.create_dataset("language_raw", data=task)
+            substep_reasonings[:] = [task] * episode_length
+            # Copy all prepared data
+            for name, array in data_dict.items():
+                root[name][...] = array
 
 
 if __name__ == "__main__":
-    tyro.cli(json_to_lerobot)
+    tyro.cli(json_to_h5)

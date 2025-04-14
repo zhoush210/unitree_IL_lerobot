@@ -10,4 +10,4 @@ to_idx = dataset.episode_data_index["to"][episode_index].item()
 
 for step_idx in tqdm.tqdm(range(from_idx, to_idx)):
     step = dataset[step_idx]
-    print(step)
+    # print(step)
