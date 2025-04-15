@@ -117,7 +117,6 @@ Convert `Unitree JSON` Dataset to `LeRobot` Format. You can define your own `rob
 ```bash
 # --raw-dir     Corresponds to the directory of your JSON dataset
 # --repo-id     Your unique repo ID on Hugging Face Hub
-# --task        The specific task for the dataset (e.g., "pour coffee")
 # --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
 # --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
 
@@ -125,7 +124,6 @@ python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
     --raw-dir $HOME/datasets/g1_grabcube_double_hand \
     --repo-id your_name/g1_grabcube_double_hand \
     --robot_type Unitree_G1_Dex3 \ 
-    --task "pour coffee" \
     --push_to_hub
 ```
 

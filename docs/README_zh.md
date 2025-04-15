@@ -113,7 +113,6 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 ```bash
 # --raw-dir     对应json的数据集目录
 # --repo-id     对应自己的repo-id 
-# --task        对应的任务 
 # --push_to_hub 是否上传到云端 
 # --robot_type  对应的机器人类型 
 
@@ -121,7 +120,6 @@ python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py
     --raw-dir $HOME/datasets/g1_grabcube_double_hand    
     --repo-id your_name/g1_grabcube_double_hand 
     --robot_type Unitree_G1_Dex3    # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
-    --task "pour coffee"
     --push_to_hub true
 ```
 
