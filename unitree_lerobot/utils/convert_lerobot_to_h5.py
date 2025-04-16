@@ -8,6 +8,7 @@ python unitree_lerobot/utils/convert_lerobot_to_h5.py.py \
     --output_dir "$HOME/datasets/g1_grabcube_double_hand" 
 """
 import os
+import cv2
 import h5py
 import tyro
 import numpy as np
@@ -33,7 +34,7 @@ class LeRobotDataProcessor:
             step = self.dataset[step_idx]
 
             image_dict = {
-                key.split(".")[2]: np.transpose((value.numpy() * 255).astype(np.uint8), (1, 2, 0))
+                key.split(".")[2]: cv2.cvtColor(np.transpose((value.numpy() * 255).astype(np.uint8), (1, 2, 0)), cv2.COLOR_BGR2RGB)
                 for key, value in step.items()
                 if key.startswith("observation.image") and len(key.split(".")) >= 3
             }

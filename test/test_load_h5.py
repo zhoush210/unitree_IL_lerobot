@@ -3,6 +3,7 @@ python test/test_load_h5.py --h5-path $HOME/datasets/episode_0.hdf5
 '''
 import tyro
 import h5py
+import cv2
 from pathlib import Path
 
 
@@ -52,6 +53,7 @@ def read_hdf5(h5_path: Path, print_structure: bool = True, print_data: bool = Tr
                             
                             # Print statistics
                             sample = dataset[0]  # Take first image
+                            cv2.imwrite("sample.jpg", sample)
                             print(f"Sample image shape: {sample.shape}")
                             print(f"Pixel value range: {sample.min()} - {sample.max()}")
                             
