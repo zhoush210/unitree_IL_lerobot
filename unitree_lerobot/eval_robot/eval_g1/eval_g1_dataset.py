@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from copy import copy
 from pprint import pformat
 from dataclasses import asdict
-from torch import Tensor, nn
+from torch import nn
 from contextlib import nullcontext
 from multiprocessing import Array, Lock
 
@@ -85,7 +85,7 @@ def eval_policy(
     ground_truth_actions = []
     predicted_actions = []
 
-    if robot_config['send_real_robot'] == True:
+    if robot_config['send_real_robot']:
         # arm
         arm_ctrl = G1_29_ArmController()
         init_left_arm_pose = step['observation.state'][:14].cpu().numpy()
@@ -117,14 +117,14 @@ def eval_policy(
     user_input = input("Please enter the start signal (enter 's' to start the subsequent program):")
     if user_input.lower() == 's':
         
-        if robot_config['send_real_robot'] == True:
+        if robot_config['send_real_robot']:
             # "The initial positions of the robot's arm and fingers take the initial positions during data recording."
-            print(f"init robot pose")
+            print("init robot pose")
             arm_ctrl.ctrl_dual_arm(init_left_arm_pose, np.zeros(14))
             left_hand_array[:] = init_left_hand_pose
             right_hand_array[:] = init_right_hand_pose
 
-            print(f"wait robot to pose")
+            print("wait robot to pose")
             time.sleep(1)
 
         frequency = 50.0
@@ -135,7 +135,7 @@ def eval_policy(
 
             for cam_name in camera_names:
                 observation[f"observation.images.{cam_name}"] = step[f"observation.images.{cam_name}"]
-            observation[f"observation.state"] = step[f"observation.state"]
+            observation["observation.state"] = step["observation.state"]
 
             action = predict_action(
                 observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
@@ -146,7 +146,7 @@ def eval_policy(
             ground_truth_actions.append(step["action"].numpy())
             predicted_actions.append(action)
 
-            if robot_config['send_real_robot'] == True:
+            if robot_config['send_real_robot']:
                 # exec action
                 arm_ctrl.ctrl_dual_arm(action[:14], np.zeros(14))
                 if robot_config['hand_type'] == "dex3":

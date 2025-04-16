@@ -3,7 +3,7 @@ Refer to:   lerobot/configs/eval.py
 '''
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from lerobot.configs import parser
 from lerobot.configs.policies import PreTrainedConfig

@@ -3,8 +3,8 @@ Script Json to Lerobot.
 
 # --raw-dir     Corresponds to the directory of your JSON dataset
 # --repo-id     Your unique repo ID on Hugging Face Hub
-# --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
 # --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
+# --push_to_hub Whether or not to upload the dataset to Hugging Face Hub (true or false)
 
 python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
     --raw-dir $HOME/datasets/g1_grabcube_double_hand \
@@ -43,92 +43,17 @@ class DatasetConfig:
 DEFAULT_DATASET_CONFIG = DatasetConfig()
 
 
-def create_empty_dataset(
-    repo_id: str,
-    robot_type: str,
-    mode: Literal["video", "image"] = "video",
-    *,
-    has_velocity: bool = False,
-    has_effort: bool = False,
-    dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
-) -> LeRobotDataset:
-    
-    motors = ROBOT_CONFIGS[robot_type].motors
-    cameras = ROBOT_CONFIGS[robot_type].cameras
-
-    features = {
-        "observation.state": {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        },
-        "action": {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        },
-    }
-
-    if has_velocity:
-        features["observation.velocity"] = {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        }
-
-    if has_effort:
-        features["observation.effort"] = {
-            "dtype": "float32",
-            "shape": (len(motors),),
-            "names": [
-                motors,
-            ],
-        }
-
-    for cam in cameras:
-        features[f"observation.images.{cam}"] = {
-            "dtype": mode,
-            "shape": (3, 480, 640),
-            "names": [
-                "channels",
-                "height",
-                "width",
-            ],
-        }
-
-    if Path(HF_LEROBOT_HOME / repo_id).exists():
-        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
-
-    return LeRobotDataset.create(
-        repo_id=repo_id,
-        fps=30,
-        robot_type=robot_type,
-        features=features,
-        use_videos=dataset_config.use_videos,
-        tolerance_s=dataset_config.tolerance_s,
-        image_writer_processes=dataset_config.image_writer_processes,
-        image_writer_threads=dataset_config.image_writer_threads,
-        video_backend=dataset_config.video_backend,
-    )
-
-
 class JsonDataset:
-    def __init__(self, data_dir: str, robot_type: str) -> None:
+    def __init__(self, data_dirs: Path, robot_type: str) -> None:
         """
         Initialize the dataset for loading and processing HDF5 files containing robot manipulation data.
         
         Args:
-            data_dir: Path to directory containing training data
+            data_dirs: Path to directory containing training data
         """
-        assert data_dir is not None, "Data directory cannot be None"
+        assert data_dirs is not None, "Data directory cannot be None"
         assert robot_type is not None, "Robot type cannot be None"
-        self.data_dir = data_dir
+        self.data_dirs = data_dirs
         self.json_file = 'data.json'
         
         # Initialize paths and cache
@@ -145,7 +70,7 @@ class JsonDataset:
         self.episode_paths = []
         self.task_paths = []
         
-        for task_path in glob.glob(os.path.join(self.data_dir, '*')):
+        for task_path in glob.glob(os.path.join(self.data_dirs, '*')):
             if os.path.isdir(task_path):
                 episode_paths = glob.glob(os.path.join(task_path, '*'))
                 if episode_paths:
@@ -259,7 +184,7 @@ class JsonDataset:
             'action_dim': action_dim,
         }
         
-        return {'episode_idx': index,
+        return {'episode_index': index,
                 'episode_length': episode_length,
                 'state': state, 
                 'action': action,
@@ -268,9 +193,84 @@ class JsonDataset:
                 'data_cfg':data_cfg}
 
 
+def create_empty_dataset(
+    repo_id: str,
+    robot_type: str,
+    mode: Literal["video", "image"] = "video",
+    *,
+    has_velocity: bool = False,
+    has_effort: bool = False,
+    dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
+) -> LeRobotDataset:
+    
+    motors = ROBOT_CONFIGS[robot_type].motors
+    cameras = ROBOT_CONFIGS[robot_type].cameras
+
+    features = {
+        "observation.state": {
+            "dtype": "float32",
+            "shape": (len(motors),),
+            "names": [
+                motors,
+            ],
+        },
+        "action": {
+            "dtype": "float32",
+            "shape": (len(motors),),
+            "names": [
+                motors,
+            ],
+        },
+    }
+
+    if has_velocity:
+        features["observation.velocity"] = {
+            "dtype": "float32",
+            "shape": (len(motors),),
+            "names": [
+                motors,
+            ],
+        }
+
+    if has_effort:
+        features["observation.effort"] = {
+            "dtype": "float32",
+            "shape": (len(motors),),
+            "names": [
+                motors,
+            ],
+        }
+
+    for cam in cameras:
+        features[f"observation.images.{cam}"] = {
+            "dtype": mode,
+            "shape": (3, 480, 640),
+            "names": [
+                "channels",
+                "height",
+                "width",
+            ],
+        }
+
+    if Path(HF_LEROBOT_HOME / repo_id).exists():
+        shutil.rmtree(HF_LEROBOT_HOME / repo_id)
+
+    return LeRobotDataset.create(
+        repo_id=repo_id,
+        fps=30,
+        robot_type=robot_type,
+        features=features,
+        use_videos=dataset_config.use_videos,
+        tolerance_s=dataset_config.tolerance_s,
+        image_writer_processes=dataset_config.image_writer_processes,
+        image_writer_threads=dataset_config.image_writer_threads,
+        video_backend=dataset_config.video_backend,
+    )
+
+
 def populate_dataset(
     dataset: LeRobotDataset,
-    raw_dir: list[Path],
+    raw_dir: Path,
     robot_type: str,
 ) -> LeRobotDataset:
 

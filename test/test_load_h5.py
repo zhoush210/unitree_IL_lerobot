@@ -1,19 +1,23 @@
+'''
+python test/test_load_h5.py --h5-path $HOME/datasets/episode_0.hdf5
+'''
+import tyro
 import h5py
-import argparse
+from pathlib import Path
 
 
-def read_hdf5(file_path, print_structure=True, print_data=True):
+def read_hdf5(h5_path: Path, print_structure: bool = True, print_data: bool = True):
     """
     Read an HDF5 file and print its structure and data.
     
     Args:
-        file_path (str): Path to the HDF5 file
+        h5_path (Path): Path to the HDF5 file
         print_structure (bool): Whether to print the file structure
         print_data (bool): Whether to print the data content
     """
     try:
-        with h5py.File(file_path, 'r') as f:
-            print(f"Successfully opened file: {file_path}")
+        with h5py.File(h5_path, 'r') as f:
+            print(f"Successfully opened file: {h5_path}")
             h5_name = []
             # Print file structure
             if print_structure:
@@ -75,15 +79,4 @@ def read_hdf5(file_path, print_structure=True, print_data=True):
 
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser(description="Read an HDF5 file")
-    parser.add_argument("file_path", type=str, help="Path to the HDF5 file")
-    parser.add_argument("--no-structure", action="store_true", help="Skip printing file structure")
-    parser.add_argument("--no-data", action="store_true", help="Skip printing data content")
-    args = parser.parse_args()
-
-    read_hdf5(
-        args.file_path,
-        print_structure=not args.no_structure,
-        print_data=not args.no_data
-    )
+    tyro.cli(read_hdf5)
