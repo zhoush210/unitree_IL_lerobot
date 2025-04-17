@@ -19,7 +19,8 @@ from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 
 class LeRobotDataProcessor:
-    def __init__(self, repo_id: str, root: str = None) -> None:
+    def __init__(self, repo_id: str, root: str = None, image_dtype: str = "to_unit8") -> None:
+        self.image_dtype = image_dtype  
         self.dataset = LeRobotDataset(repo_id=repo_id, root=root)
 
     def process_episode(self, episode_index: int) -> dict:
@@ -40,7 +41,13 @@ class LeRobotDataProcessor:
             }
 
             for key, value in image_dict.items():
-                cameras[key].append(value)
+                if self.image_dtype == "to_unit8":
+                    cameras[key].append(value)
+                elif self.image_dtype == "to_bytes":
+                    success, encoded_img = cv2.imencode('.jpg', value, [cv2.IMWRITE_JPEG_QUALITY, 100])
+                    if not success:
+                        raise ValueError(f"Image encoding failed for key: {key}")
+                    cameras[key].append(np.void(encoded_img.tobytes()))
 
             cam_height, cam_width = next(iter(image_dict.values())).shape[:2]
             episode["state"].append(step["observation.state"])
@@ -99,13 +106,10 @@ class H5Writer:
 
             # Write camera images
             for cam_name, images in cameras.items():
-                image.create_dataset(
-                    cam_name,
-                    shape=(episode_length, data_cfg['cam_height'], data_cfg['cam_width'], 3),
-                    dtype='uint8',
-                    chunks=(1, data_cfg['cam_height'], data_cfg['cam_width'], 3),
-                    compression="gzip"
-                )
+                data_dtype = images[0].dtype
+                shape = (episode_length, data_cfg['cam_height'], data_cfg['cam_width'], 3) if data_dtype == 'uint8' else (episode_length, )
+                chunks = (1, data_cfg['cam_height'], data_cfg['cam_width'], 3) if data_dtype == 'uint8' else (1, )
+                image.create_dataset(cam_name, shape=shape, dtype=data_dtype, chunks=chunks, compression="gzip")
                 # root[f'/observations/images/{cam_name}'][...] = images
 
             # Write state and action data
@@ -128,7 +132,7 @@ def lerobot_to_h5(repo_id: str, output_dir: Path, root: str = None) -> None:
     """Main function to process and write LeRobot data to HDF5 format."""
 
     # Initialize data processor and H5 writer
-    data_processor = LeRobotDataProcessor(repo_id, root)
+    data_processor = LeRobotDataProcessor(repo_id, root ,image_dtype = 'to_bytes') # image_dtype Options: "to_unit8", "to_bytes"
     h5_writer = H5Writer(output_dir)
 
     # Process each episode

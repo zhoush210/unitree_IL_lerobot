@@ -5,6 +5,7 @@ import tyro
 import h5py
 import cv2
 from pathlib import Path
+import numpy as np
 
 
 def read_hdf5(h5_path: Path, print_structure: bool = True, print_data: bool = True):
@@ -47,12 +48,13 @@ def read_hdf5(h5_path: Path, print_structure: bool = True, print_data: bool = Tr
                         # Print memory usage
                         print(f"\nTotal dataset size: {dataset.size * dataset.dtype.itemsize / (1024**2):.2f} MB")
 
-                        # Special handling for 4D image data [n, width, height, channels]
-                        if len(shape) == 4 and shape[3] == 3:  # Check for 4D with 3 channels
+                        # Special handling for datasets with name containing 'observations/images'
+                        if 'observations/images' in name:
                             print("Image Dataset [width, height, channels]:")
-                            
+                            print(dataset[0].dtype)
                             # Print statistics
-                            sample = dataset[0]  # Take first image
+                            sample = dataset[0] if dataset[0].dtype == 'uint8' else cv2.imdecode(np.frombuffer(dataset[0], dtype=np.uint8), cv2.IMREAD_COLOR)
+
                             cv2.imwrite("sample.jpg", sample)
                             print(f"Sample image shape: {sample.shape}")
                             print(f"Pixel value range: {sample.min()} - {sample.max()}")
