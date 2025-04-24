@@ -132,7 +132,7 @@ def lerobot_to_h5(repo_id: str, output_dir: Path, root: str = None) -> None:
     """Main function to process and write LeRobot data to HDF5 format."""
 
     # Initialize data processor and H5 writer
-    data_processor = LeRobotDataProcessor(repo_id, root ,image_dtype = 'to_bytes') # image_dtype Options: "to_unit8", "to_bytes"
+    data_processor = LeRobotDataProcessor(repo_id, root ,image_dtype = 'to_unit8') # image_dtype Options: "to_unit8", "to_bytes"
     h5_writer = H5Writer(output_dir)
 
     # Process each episode
