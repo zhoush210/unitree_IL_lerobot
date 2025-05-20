@@ -55,7 +55,7 @@ def read_hdf5(h5_path: Path, print_structure: bool = True, print_data: bool = Tr
                             # Print statistics
                             sample = dataset[0] if dataset[0].dtype == 'uint8' else cv2.imdecode(np.frombuffer(dataset[0], dtype=np.uint8), cv2.IMREAD_COLOR)
 
-                            cv2.imwrite("sample.jpg", sample)
+                            cv2.imwrite(f"{name.split('/')[-1]}.jpg", sample)
                             print(f"Sample image shape: {sample.shape}")
                             print(f"Pixel value range: {sample.min()} - {sample.max()}")
                             
