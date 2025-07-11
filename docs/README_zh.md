@@ -84,17 +84,17 @@ python lerobot/scripts/visualize_dataset.py \
 
 ## 2.3 🛠️ 数据转换
 
-使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。假如采集的数据存放在`$HOME/datasets/g1_grabcube_double_hand` 目录中，格式如下:
-
-    g1_grabcube_double_hand/        #任务名称
-    ├── episode_0001                #第一条轨迹
-    │    ├──audios/                 #声音信息
-    │    ├──colors/                 #图像信息
-    │    ├──depths/                 #深度图像信息
-    │    └──data.json               #状态以及动作信息
-    ├── episode_0002
-    ├── episode_...
-    ├── episode_xxx
+使用[avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate)采集的数据是采用 JSON 格式进行存储。假如采集的数据存放在`$HOME/datasets/task_name` 目录中，格式如下:
+datasets/                               # 数据集文件夹
+    └── task_name /                     # 任务名称
+        ├── episode_0001                # 第一条轨迹
+        │    ├──audios/                 # 声音信息
+        │    ├──colors/                 # 图像信息
+        │    ├──depths/                 # 深度图像信息
+        │    └──data.json               # 状态以及动作信息
+        ├── episode_0002
+        ├── episode_...
+        ├── episode_xxx
 
 
 ### 2.3.1 🔀 排序和重命名
@@ -103,7 +103,7 @@ python lerobot/scripts/visualize_dataset.py \
 
 ```bash
 python unitree_lerobot/utils/sort_and_rename_folders.py \
-        --data_dir $HOME/datasets/g1_grabcube_double_hand
+        --data_dir $HOME/datasets/task_name
 ```
 
 ### 2.3.2 🔄 转换
@@ -117,10 +117,10 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 # --robot_type  对应的机器人类型 
 
 python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py  
-    --raw-dir $HOME/datasets/g1_grabcube_double_hand    
-    --repo-id your_name/g1_grabcube_double_hand 
+    --raw-dir $HOME/datasets    
+    --repo-id your_name/repo_task_name  
     --robot_type Unitree_G1_Dex3    # Unitree_Z1_Dual, Unitree_G1_Gripper, Unitree_G1_Dex3
-    --push_to_hub true
+    --push_to_hub
 ```
 
 

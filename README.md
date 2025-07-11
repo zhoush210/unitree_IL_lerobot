@@ -88,18 +88,17 @@ If you want to record your own dataset. The open-source teleoperation project [a
 
 ## 2.3 🛠️ Data Conversion
 
-The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format. Assuming the collected data is stored in the `$HOME/datasets/g1_grabcube_double_hand`, the format is as follows
-
-    g1_grabcube_double_hand/        # Task name
-    │
-    ├── episode_0001                # First trajectory
-    │    ├──audios/                 # Audio information
-    │    ├──colors/                 # Image information
-    │    ├──depths/                 # Depth image information
-    │    └──data.json               # State and action information
-    ├── episode_0002
-    ├── episode_...
-    ├── episode_xxx
+The data collected using [avp_teleoperate](https://github.com/unitreerobotics/avp_teleoperate/tree/g1) is stored in JSON format. Assuming the collected data is stored in the `$HOME/datasets/task_name`, the format is as follows
+datasets/                               # Dataset folder
+    └── task_name /                     # Task name
+        ├── episode_0001                # First trajectory
+        │    ├──audios/                 # Audio information
+        │    ├──colors/                 # Image information
+        │    ├──depths/                 # Depth image information
+        │    └──data.json               # State and action information
+        ├── episode_0002
+        ├── episode_...
+        ├── episode_xxx
 
 ### 2.3.1 🔀 Sort and Rename
 
@@ -108,7 +107,7 @@ When generating datasets for LeRobot, it is recommended to ensure that the data 
 
 ```bash
 python unitree_lerobot/utils/sort_and_rename_folders.py \
-        --data_dir $HOME/datasets/g1_grabcube_double_hand
+        --data_dir $HOME/datasets/task_name
 ```
 
 #### 2.3.2 🔄 Conversion
@@ -121,8 +120,8 @@ Convert `Unitree JSON` Dataset to `LeRobot` Format. You can define your own `rob
 # --robot_type  The type of the robot used in the dataset (e.g., Unitree_G1_Dex3, Unitree_Z1_Dual, Unitree_G1_Dex3)
 
 python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
-    --raw-dir $HOME/datasets/g1_grabcube_double_hand \
-    --repo-id your_name/g1_grabcube_double_hand \
+    --raw-dir $HOME/datasets \
+    --repo-id your_name/repo_task_name \
     --robot_type Unitree_G1_Dex3 \ 
     --push_to_hub
 ```
