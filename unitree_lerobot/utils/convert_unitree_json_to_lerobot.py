@@ -293,7 +293,9 @@ def populate_dataset(
             }
 
             for camera, img_array in cameras.items():
-                frame[f"observation.images.{camera}"] = img_array[i]
+                img_resized = cv2.resize(img_array[i], (640, 480))
+                img_resized = np.transpose(img_resized, (2, 0, 1))
+                frame[f"observation.images.{camera}"] = img_resized
 
             dataset.add_frame(frame)
 

@@ -109,8 +109,16 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 
 ### 2.3.2 🔄 转换
 
-转换`json`格式到`lerobot`格式，你可以根据 [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154) 去定义自己的 `robot_type`
+1. 转换`json`格式到`lerobot`格式，你可以根据 [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154) 去定义自己的 `robot_type`
 
+2. 按需修改[unitree_lerobot/utils/constants.py#L124](../unitree_lerobot/utils/constants.py#L124)中对应机器人的相机配置 `cameras`
+
+3. 安装 mmfpeg：
+```bash
+conda install -c conda-forge ffmpeg
+```
+
+4. 转换
 ```bash
 # --raw-dir     对应json的数据集目录
 # --repo-id     对应自己的repo-id 
@@ -124,10 +132,38 @@ python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py
     --push_to_hub
 ```
 
+5. 若报错`subprocess.CalledProcessError: Command '[...]' returned non-zero exit status 1.`，把Command复制到终端运行，报错 `Unknown encoder 'libsvtav1'`，说明你的 ffmpeg 没有编译 AV1（svt-av1）编码器，则用源码安装ffmpeg并开启libsvtav1编译选项：
+```bash
+# 卸载ffmpeg
+sudo apt-get remove ffmpeg
+conda remove ffmpeg
+# 安装 NASM（x86 架构的汇编器）
+sudo apt update
+sudo apt install nasm
+# 安装 SVT-AV1 编码器
+git clone https://gitlab.com/AOMediaCodec/SVT-AV1.git
+cd SVT-AV1
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+make -j$(nproc)
+sudo make install
+# 可以把这2行加到你的 ~/.bashrc 或 ~/.zshrc 中，以永久生效
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" 
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# 源码安装ffmpeg并开启libsvtav1编译选项
+git clone https://github.com/FFmpeg/FFmpeg.git
+cd FFmpeg
+./configure --enable-libsvtav1
+make -j$(nproc)
+sudo make install
+```
+
 
 # 3. 🚀 训练
 
 [请详细阅读官方lerobot训练实例与相关参数](https://github.com/huggingface/lerobot/blob/main/examples/4_train_policy_with_script.md)
+
+推荐打开[unitree_lerobot/lerobot/lerobot/configs/default.py#L45](../unitree_lerobot/lerobot/lerobot/configs/default.py#L45)的`WandBConfig.enable`
 
 
 - `训练 act`
@@ -138,6 +174,10 @@ python lerobot/scripts/train.py \
     --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
     --policy.type=act 
 ```
+
+- 若报错 `NotImplementedError: There were no tensor arguments to this function (e.g., you passed an empty list of Tensors), but no fallback function is registered for schema torchcodec_ns::create_from_file.`
+修改[unitree_lerobot/lerobot/lerobot/configs/default.py#L39](../unitree_lerobot/lerobot/lerobot/configs/default.py#L39)
+为`video_backend: str = "pyav"`
 
 - `训练 Diffusion Policy`
 ```
@@ -155,6 +195,7 @@ python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
 ```
+当你在显存小于 70GB 的 GPU 上训练 Pi0 时，建议使用 LoRA。可以通过添加 `--use_lora=true` 来启用。
 
 # 4. 🤖 真机测试
 [如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)

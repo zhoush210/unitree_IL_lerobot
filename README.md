@@ -114,7 +114,16 @@ python unitree_lerobot/utils/sort_and_rename_folders.py \
 
 #### 2.3.2 🔄 Conversion
 
-Convert `Unitree JSON` Dataset to `LeRobot` Format. You can define your own `robot_type` based on [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154).
+1. Convert `Unitree JSON` Dataset to `LeRobot` Format. You can define your own `robot_type` based on [ROBOT_CONFIGS](https://github.com/unitreerobotics/unitree_IL_lerobot/blob/main/unitree_lerobot/utils/convert_unitree_json_to_lerobot.py#L154).
+
+2. Modify the `cameras` configuration of the corresponding robot as needed in [unitree_lerobot/utils/constants.py](./unitree_lerobot/utils/constants.py#L124)
+
+3. Install mmfpeg:
+```bash
+conda install -c conda-forge ffmpeg
+```
+
+4. Conversion
 ```bash
 # --raw-dir     Corresponds to the directory of your JSON dataset
 # --repo-id     Your unique repo ID on Hugging Face Hub
@@ -128,10 +137,38 @@ python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
     --push_to_hub
 ```
 
+5. If you encounter the error `subprocess.CalledProcessError: Command '[...]' returned non-zero exit status 1.` and running the command directly in the terminal gives the error `Unknown encoder 'libsvtav1'`, it means your FFmpeg was not built with the AV1 (svt-av1) encoder. In this case, install FFmpeg from source with the libsvtav1 enabled during compilation.
+```bash
+# remove ffmpeg
+sudo apt-get remove ffmpeg
+conda remove ffmpeg
+# install NASM
+sudo apt update
+sudo apt install nasm
+# install SVT-AV1 encoder
+git clone https://gitlab.com/AOMediaCodec/SVT-AV1.git
+cd SVT-AV1
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+make -j$(nproc)
+sudo make install
+# You can add these two lines to your ~/.bashrc or ~/.zshrc to make them take effect permanently.
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" 
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# Install FFmpeg from source with the libsvtav1 encoder enabled during compilation.
+git clone https://github.com/FFmpeg/FFmpeg.git
+cd FFmpeg
+./configure --enable-libsvtav1
+make -j$(nproc)
+sudo make install
+```
 
 # 3. 🚀 Training
 
 [For training, please refer to the official LeRobot training example and parameters for further guidance.](https://github.com/huggingface/lerobot/blob/main/examples/4_train_policy_with_script.md)
+
+It is recommended to enable `WandBConfig.enable` in [unitree_lerobot/lerobot/lerobot/configs/default.py#L45](./unitree_lerobot/lerobot/lerobot/configs/default.py#L45)
+
 
 
 - `Train Act Policy`
@@ -143,6 +180,8 @@ python lerobot/scripts/train.py \
     --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
     --policy.type=act 
 ```
+
+- If you encounter the error `NotImplementedError: There were no tensor arguments to this function (e.g., you passed an empty list of Tensors), but no fallback function is registered for schema torchcodec_ns::create_from_file.`, modify [unitree_lerobot/lerobot/lerobot/configs/default.py#L39](./unitree_lerobot/lerobot/lerobot/configs/default.py#L39) to `video_backend: str = "pyav"`
 
 - `Train Diffusion Policy`
 
@@ -163,6 +202,7 @@ python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
 ```
+Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lora=true`
 
 # 4. 🤖 Real-World Testing
 
@@ -199,3 +239,31 @@ This code builds upon following open-source code-bases. Please visit the URLs to
 
 1. https://github.com/huggingface/lerobot
 2. https://github.com/unitreerobotics/unitree_sdk2_python
+
+# 7. Command history
+Conversion
+```bash
+python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
+    --raw-dir /mnt/805_data \
+    --repo-id grab_red_bird \
+    --robot_type Unitree_G1_Dex3
+```
+
+train
+```bash
+cd unitree_lerobot/lerobot
+python lerobot/scripts/train.py \
+    --dataset.repo_id=grab_red_bird \
+    --policy.type=act 
+```
+
+--policy.type=act/diffusion/pi0
+
+Use LoRA when training Pi0 on GPUs with less than 70GB of memory.
+```bash
+cd unitree_lerobot/lerobot
+python lerobot/scripts/train.py \
+  --dataset.repo_id=grab_red_bird \
+  --policy.type=pi0 \
+  --use_lora=true
+```
