@@ -198,7 +198,12 @@ python lerobot/scripts/train.py \
 当你在显存小于 70GB 的 GPU 上训练 Pi0 时，建议使用 LoRA。可以通过添加 `--use_lora=true` 来启用。
 
 # 4. 🤖 真机测试
-[如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
+- [如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
+
+- 在`pretrained_model/config.json`的第一行添加`"type": "act",`
+
+- 控制机器人进入调试模式：`L2+R2`
+
 ```bash
 # --policy.path 训练保存模型路径
 # --repo_id     训练加载的数据集(为什么要用? 加载数据集中第一帧状态做为起始动作)

@@ -74,11 +74,11 @@ def eval_policy(
     img_config = {
         'fps': 30,
         'head_camera_type': 'opencv',
-        'head_camera_image_shape': [480, 1280],  # Head camera resolution
+        'head_camera_image_shape': [720, 1280],  # Head camera resolution
         'head_camera_id_numbers': [0],
-        'wrist_camera_type': 'opencv',
-        'wrist_camera_image_shape': [480, 640],  # Wrist camera resolution
-        'wrist_camera_id_numbers': [2, 4],
+        # 'wrist_camera_type': 'opencv',
+        # 'wrist_camera_image_shape': [720, 640],  # Wrist camera resolution
+        # 'wrist_camera_id_numbers': [2, 4],
     }
     ASPECT_RATIO_THRESHOLD = 2.0 # If the aspect ratio exceeds this value, it is considered binocular
     if len(img_config['head_camera_id_numbers']) > 1 or (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
@@ -179,9 +179,9 @@ def eval_policy(
 
             observation = {
                 "observation.images.cam_left_high": torch.from_numpy(left_top_camera),
-                "observation.images.cam_right_high": torch.from_numpy(right_top_camera) if BINOCULAR else None,
-                "observation.images.cam_left_wrist": torch.from_numpy(left_wrist_camera) if WRIST else None,
-                "observation.images.cam_right_wrist": torch.from_numpy(right_wrist_camera) if WRIST else None,
+                # "observation.images.cam_right_high": torch.from_numpy(right_top_camera) if BINOCULAR else None,
+                # "observation.images.cam_left_wrist": torch.from_numpy(left_wrist_camera) if WRIST else None,
+                # "observation.images.cam_right_wrist": torch.from_numpy(right_wrist_camera) if WRIST else None,
             }
 
             # get current state data.

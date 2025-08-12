@@ -80,9 +80,9 @@ G1_GRIPPER_CONFIG = RobotConfig(
     ],
     cameras=[
         "cam_left_high",
-        "cam_right_high",
-        "cam_left_wrist",
-        "cam_right_wrist",
+        # "cam_right_high",
+        # "cam_left_wrist",
+        # "cam_right_wrist",
         ],
     camera_to_image_key = {'color_0': 'cam_left_high', 'color_1':'cam_right_high', 'color_2': 'cam_left_wrist' ,'color_3': 'cam_right_wrist'},
     json_state_data_name = ['left_arm', 'right_arm', 'left_hand', 'right_hand'],

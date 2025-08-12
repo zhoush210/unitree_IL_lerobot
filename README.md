@@ -206,9 +206,11 @@ Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lor
 
 # 4. 🤖 Real-World Testing
 
-To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
-
+- To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 [To open the image_server, follow these steps](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
+
+- add `"type": "act",` to the first line of `pretrained_model/config.json`
+- Control the robot to enter debug mode. `L2+R2`
 
 ```bash
 # --policy.path Path to the trained model checkpoint
@@ -241,19 +243,19 @@ This code builds upon following open-source code-bases. Please visit the URLs to
 2. https://github.com/unitreerobotics/unitree_sdk2_python
 
 # 7. Command history
-Conversion
+## Conversion
 ```bash
 python unitree_lerobot/utils/convert_unitree_json_to_lerobot.py \
     --raw-dir /mnt/805_data \
-    --repo-id grab_red_bird \
+    --repo-id g1/grab_red_bird \
     --robot_type Unitree_G1_Dex3
 ```
 
-train
+## train
 ```bash
 cd unitree_lerobot/lerobot
 python lerobot/scripts/train.py \
-    --dataset.repo_id=grab_red_bird \
+    --dataset.repo_id=g1/grab_red_bird \
     --policy.type=act 
 ```
 
@@ -263,7 +265,16 @@ Use LoRA when training Pi0 on GPUs with less than 70GB of memory.
 ```bash
 cd unitree_lerobot/lerobot
 python lerobot/scripts/train.py \
-  --dataset.repo_id=grab_red_bird \
+  --dataset.repo_id=g1/grab_red_bird \
   --policy.type=pi0 \
   --use_lora=true
+```
+
+## eval
+- add `"type": "act",` to the first line of `unitree_lerobot/lerobot/outputs/train/2025-08-08/20-16-35_act/checkpoints/010000/pretrained_model/config.json`
+- Control the robot to enter debug mode. `L2+R2`->`L2+A`
+```bash
+python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  \
+    --policy.path=unitree_lerobot/lerobot/outputs/train/2025-08-08/20-16-35_act/checkpoints/010000/pretrained_model \
+    --repo_id=g1/grab_red_bird
 ```
