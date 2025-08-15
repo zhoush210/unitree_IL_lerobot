@@ -202,7 +202,7 @@ python lerobot/scripts/train.py \
 
 - 在`pretrained_model/config.json`的第一行添加`"type": "act",`
 
-- 控制机器人进入调试模式：`L2+R2`
+- 控制机器人进入正常运控模式：`L2+B`->`L2+up`->`R1+X`
 
 ```bash
 # --policy.path 训练保存模型路径

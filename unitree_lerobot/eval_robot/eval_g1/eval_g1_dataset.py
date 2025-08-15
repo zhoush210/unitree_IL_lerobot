@@ -81,7 +81,7 @@ def eval_policy(
     step = dataset[from_idx]
     to_idx = dataset.episode_data_index["to"][0].item()
 
-    camera_names = ["cam_left_high", "cam_right_high", "cam_left_wrist", "cam_right_wrist"]
+    camera_names = ["cam_left_high"]
     ground_truth_actions = []
     predicted_actions = []
 

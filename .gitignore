@@ -6,3 +6,5 @@ unitree_sdk2_python/
 cam_high.jpg
 cam_right_wrist.jpg
 cam_left_wrist.jpg
+eval_videos/
+*.png

@@ -210,7 +210,7 @@ Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lor
 [To open the image_server, follow these steps](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 
 - add `"type": "act",` to the first line of `pretrained_model/config.json`
-- Control the robot to enter debug mode. `L2+R2`
+- Control the robot to enter normal control mode. `L2+B`->`L2+up`->`R1+X`
 
 ```bash
 # --policy.path Path to the trained model checkpoint
