@@ -286,20 +286,24 @@ def eval_policy(
                 observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
             )
             action = action.cpu().numpy()
+            
+            # 将14维动作扩展为28维以控制机器人
+            action_28d = expand_14d_to_28d_action(action)
+            
             state = observation["observation.state"].cpu().numpy()
 
             # excute action
             # arm_ctrl.ctrl_dual_arm(action[:14], np.zeros(14))
-            target_qpos = np.concatenate([action[:14], np.zeros(3)], axis=0)
+            target_qpos = np.concatenate([action_28d[:14], np.zeros(3)], axis=0)
             custom.set_arm_pose(target_qpos, enable_sdk=True)
-            hand_ctrl.ctrl_dual_hand(action[14:21],  action[21:])
+            hand_ctrl.ctrl_dual_hand(action_28d[14:21],  action_28d[21:])
 
             if robot_config['hand_type'] == "dex3":
-                left_hand_array[:] = action[14:21]
-                right_hand_array[:] = action[21:]
+                left_hand_array[:] = action_28d[14:21]
+                right_hand_array[:] = action_28d[21:]
             elif robot_config['hand_type'] == "gripper":
-                left_hand_array[:] = action[14]
-                right_hand_array[:] = action[15]
+                left_hand_array[:] = action_28d[14]
+                right_hand_array[:] = action_28d[15]
         
             time.sleep(1/frequency)
         save_episode_video(frames, rollout_id, time_dir)
@@ -309,6 +313,52 @@ def eval_policy(
             wrist_img_shm.close()
             wrist_img_shm.unlink()
         print("End of eval_policy")
+
+# 右手14个自由度对应的原始28维数组索引
+RIGHT_HAND_ACTION_INDICES = [7, 8, 9, 10, 11, 12, 13, 14, 22, 23, 24, 25, 26, 27]
+
+def expand_14d_to_28d_action(action_14d: np.ndarray) -> np.ndarray:
+    """
+    将14维动作扩展为28维动作，用于控制机器人
+    
+    Args:
+        action_14d: 14维动作数组
+        
+    Returns:
+        28维动作数组，右手位置填充14维动作，其他位置填充0
+    """
+    action_28d = np.zeros(28)
+    action_28d[RIGHT_HAND_ACTION_INDICES] = action_14d
+    return action_28d
+
+def filter_dataset_stats_for_right_hand(dataset_stats: dict) -> dict:
+    """
+    过滤数据集统计信息，只保留右手的14个自由度
+    
+    Args:
+        dataset_stats: 原始数据集统计信息
+        
+    Returns:
+        过滤后的统计信息
+    """
+    filtered_stats = {}
+    for key, value in dataset_stats.items():
+        if key == "action" and isinstance(value, dict):
+            filtered_action_stats = {}
+            for stat_type, stat_value in value.items():
+                if hasattr(stat_value, 'shape') and len(stat_value.shape) > 0 and stat_value.shape[-1] == 28:
+                    # 提取右手的14个自由度统计信息
+                    filtered_action_stats[stat_type] = stat_value[..., RIGHT_HAND_ACTION_INDICES]
+                elif hasattr(stat_value, '__len__') and len(stat_value) == 28:
+                    # 处理list或numpy数组
+                    filtered_action_stats[stat_type] = [stat_value[i] for i in RIGHT_HAND_ACTION_INDICES]
+                else:
+                    filtered_action_stats[stat_type] = stat_value
+            filtered_stats[key] = filtered_action_stats
+        else:
+            filtered_stats[key] = value
+    
+    return filtered_stats
 
 @parser.wrap()
 def eval_main(cfg: EvalRealConfig):
@@ -324,9 +374,44 @@ def eval_main(cfg: EvalRealConfig):
 
     dataset = LeRobotDataset(repo_id = cfg.repo_id)
 
+    # 修改数据集元数据以支持14维动作输出
+    if hasattr(dataset.meta, 'features') and 'action' in dataset.meta.features:
+        # 创建一个新的元数据对象，手动设置所需的属性
+        from copy import deepcopy
+        modified_meta = type(dataset.meta)(
+            repo_id=dataset.meta.repo_id,
+            root=dataset.meta.root,
+            revision=dataset.meta.revision
+        )
+        
+        # 复制所有属性
+        modified_meta.info = deepcopy(dataset.meta.info)
+        modified_meta.tasks = deepcopy(dataset.meta.tasks)
+        modified_meta.task_to_task_index = deepcopy(dataset.meta.task_to_task_index)
+        modified_meta.episodes = deepcopy(dataset.meta.episodes)
+        modified_meta.episodes_stats = deepcopy(dataset.meta.episodes_stats)
+        
+        # 修改features - 通过修改info字典来设置features
+        modified_meta.info['features'] = deepcopy(dataset.meta.info['features'])
+        modified_meta.info['features']['action'] = dict(modified_meta.info['features']['action'])
+        modified_meta.info['features']['action']['shape'] = (14,)
+        logging.info(f"Updated action feature shape to {modified_meta.info['features']['action']['shape']}")
+        
+        # 过滤数据集统计信息以匹配14维动作
+        if hasattr(dataset, 'stats') and dataset.stats:
+            modified_meta.stats = filter_dataset_stats_for_right_hand(dataset.stats)
+            logging.info("Filtered dataset statistics for right hand actions")
+        else:
+            modified_meta.stats = deepcopy(dataset.meta.stats)
+            if 'action' in modified_meta.stats:
+                modified_meta.stats = filter_dataset_stats_for_right_hand(modified_meta.stats)
+                logging.info("Filtered existing stats for right hand actions")
+    else:
+        modified_meta = dataset.meta
+
     policy = make_policy(
         cfg=cfg.policy,
-        ds_meta=dataset.meta
+        ds_meta=modified_meta
     )
     policy.eval()
 
