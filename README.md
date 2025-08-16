@@ -202,15 +202,16 @@ python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
 ```
-Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lora=true`
+Use LoRA when training Pi0 on GPUs with less than 30GB of memory. Add `--use_lora=true`
 
 # 4. 🤖 Real-World Testing
 
 - To test your trained model on a real robot, you can use the eval_g1.py script located in the eval_robot/eval_g1 folder. Here’s how to run it:
 [To open the image_server, follow these steps](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 
-- add `"type": "act",` to the first line of `pretrained_model/config.json`
 - Control the robot to enter normal control mode. `L2+B`->`L2+up`->`R1+X`
+
+- Eval pi0: Modify line 408 of unitree_lerobot/lerobot/lerobot/common/policies/pi0/modeling_pi0.py from `tasks = batch["task"]` to `tasks = ["Grab the red bird and put it into the box"]` before evaluating pi0.
 
 ```bash
 # --policy.path Path to the trained model checkpoint
@@ -261,7 +262,7 @@ python lerobot/scripts/train.py \
 
 --policy.type=act/diffusion/pi0
 
-Use LoRA when training Pi0 on GPUs with less than 70GB of memory.
+Use LoRA when training Pi0 on GPUs with less than 30GB of memory.
 ```bash
 cd unitree_lerobot/lerobot
 python lerobot/scripts/train.py \
@@ -271,8 +272,10 @@ python lerobot/scripts/train.py \
 ```
 
 ## eval
-- add `"type": "act",` to the first line of `unitree_lerobot/lerobot/outputs/train/2025-08-08/20-16-35_act/checkpoints/010000/pretrained_model/config.json`
 - Control the robot to enter debug mode. `L2+R2`->`L2+A`
+
+- Eval pi0: Modify line 408 of unitree_lerobot/lerobot/lerobot/common/policies/pi0/modeling_pi0.py from `tasks = batch["task"]` to `tasks = ["Grab the red bird and put it into the box"]` before evaluating pi0.
+
 ```bash
 python unitree_lerobot/eval_robot/eval_g1/eval_g1.py  \
     --policy.path=unitree_lerobot/lerobot/outputs/train/2025-08-08/20-16-35_act/checkpoints/010000/pretrained_model \

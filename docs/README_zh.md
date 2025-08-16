@@ -195,14 +195,15 @@ python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
 ```
-当你在显存小于 70GB 的 GPU 上训练 Pi0 时，建议使用 LoRA。可以通过添加 `--use_lora=true` 来启用。
+当你在显存小于 30GB 的 GPU 上训练 Pi0 时，建议使用 LoRA。可以通过添加 `--use_lora=true` 来启用。
 
 # 4. 🤖 真机测试
 - [如何打开 image_server](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 
-- 在`pretrained_model/config.json`的第一行添加`"type": "act",`
-
 - 控制机器人进入正常运控模式：`L2+B`->`L2+up`->`R1+X`
+
+- 测试pi0：在运行pi0推理之前，修改 `unitree_lerobot/lerobot/lerobot/common/policies/pi0/modeling_pi0.py` 的第 408 行：将 `tasks = batch["task"]` 改为 `tasks = ["Grab the red bird and put it into the box"]`
+
 
 ```bash
 # --policy.path 训练保存模型路径

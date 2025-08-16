@@ -117,47 +117,6 @@ def eval_policy(
     num_rollouts = 50
     time_dir = datetime.now().strftime("%Y%m%d_%H%M%S")
     for rollout_id in range(num_rollouts):
-        # image
-        img_config = {
-            'fps': 30,
-            'head_camera_type': 'opencv',
-            'head_camera_image_shape': [720, 1280],  # Head camera resolution
-            'head_camera_id_numbers': [0],
-            # 'wrist_camera_type': 'opencv',
-            # 'wrist_camera_image_shape': [720, 640],  # Wrist camera resolution
-            # 'wrist_camera_id_numbers': [2, 4],
-        }
-        ASPECT_RATIO_THRESHOLD = 2.0 # If the aspect ratio exceeds this value, it is considered binocular
-        if len(img_config['head_camera_id_numbers']) > 1 or (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
-            BINOCULAR = True
-        else:
-            BINOCULAR = False
-        if 'wrist_camera_type' in img_config:
-            WRIST = True
-        else:
-            WRIST = False
-        
-        if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
-            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
-        else:
-            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1], 3)
-
-        tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
-        tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = tv_img_shm.buf)
-
-        if WRIST:
-            wrist_img_shape = (img_config['wrist_camera_image_shape'][0], img_config['wrist_camera_image_shape'][1] * 2, 3)
-            wrist_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(wrist_img_shape) * np.uint8().itemsize)
-            wrist_img_array = np.ndarray(wrist_img_shape, dtype = np.uint8, buffer = wrist_img_shm.buf)
-            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name, 
-                                    wrist_img_shape = wrist_img_shape, wrist_img_shm_name = wrist_img_shm.name)
-        else:
-            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
-
-        image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
-        image_receive_thread.daemon = True
-        image_receive_thread.start()
-
         robot_config = {
             'arm_type': 'g1',
             'hand_type': "dex3",
@@ -234,14 +193,56 @@ def eval_policy(
         tty.setcbreak(sys.stdin.fileno())
         print("按回车键开始推理，按 's' 键结束推理")
         input()
+
+        # image
+        img_config = {
+            'fps': 30,
+            'head_camera_type': 'opencv',
+            'head_camera_image_shape': [720, 1280],  # Head camera resolution
+            'head_camera_id_numbers': [0],
+            # 'wrist_camera_type': 'opencv',
+            # 'wrist_camera_image_shape': [720, 640],  # Wrist camera resolution
+            # 'wrist_camera_id_numbers': [2, 4],
+        }
+        ASPECT_RATIO_THRESHOLD = 2.0 # If the aspect ratio exceeds this value, it is considered binocular
+        if len(img_config['head_camera_id_numbers']) > 1 or (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
+            BINOCULAR = True
+        else:
+            BINOCULAR = False
+        if 'wrist_camera_type' in img_config:
+            WRIST = True
+        else:
+            WRIST = False
+        
+        if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
+            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
+        else:
+            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1], 3)
+
+        tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
+        tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = tv_img_shm.buf)
+
+        if WRIST:
+            wrist_img_shape = (img_config['wrist_camera_image_shape'][0], img_config['wrist_camera_image_shape'][1] * 2, 3)
+            wrist_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(wrist_img_shape) * np.uint8().itemsize)
+            wrist_img_array = np.ndarray(wrist_img_shape, dtype = np.uint8, buffer = wrist_img_shm.buf)
+            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name, 
+                                    wrist_img_shape = wrist_img_shape, wrist_img_shm_name = wrist_img_shm.name)
+        else:
+            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
+
+        image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
+        image_receive_thread.daemon = True
+        image_receive_thread.start()
+
         frames = []
         max_step = 500
         for i in range(max_step):
             print("step:", i)
             key = get_key_nonblocking()
             if key == 's':
-                        print("检测到按键 's'，退出循环")
-                        break
+                print("检测到按键 's'，退出循环")
+                break
             # Get images
             current_tv_image = tv_img_array.copy()
             frames.append(current_tv_image.copy())
