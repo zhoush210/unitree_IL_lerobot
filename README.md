@@ -202,7 +202,7 @@ python lerobot/scripts/train.py \
   --dataset.repo_id=unitreerobotics/G1_ToastedBread_Dataset \
   --policy.type=pi0
 ```
-Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lora=true`
+Use LoRA when training Pi0 on GPUs with less than 30GB of memory. Add `--use_lora=true`
 
 # 4. 🤖 Real-World Testing
 
@@ -210,7 +210,7 @@ Use LoRA when training Pi0 on GPUs with less than 70GB of memory. Add `--use_lor
 [To open the image_server, follow these steps](https://github.com/unitreerobotics/avp_teleoperate?tab=readme-ov-file#31-%EF%B8%8F-image-server)
 
 - add `"type": "act",` to the first line of `pretrained_model/config.json`
-- Control the robot to enter debug mode. `L2+R2`
+- Control the robot to enter normal control mode. `L2+B`->`L2+up`->`R1+X`
 
 ```bash
 # --policy.path Path to the trained model checkpoint
@@ -261,7 +261,7 @@ python lerobot/scripts/train.py \
 
 --policy.type=act/diffusion/pi0
 
-Use LoRA when training Pi0 on GPUs with less than 70GB of memory.
+Use LoRA when training Pi0 on GPUs with less than 30GB of memory.
 ```bash
 cd unitree_lerobot/lerobot
 python lerobot/scripts/train.py \

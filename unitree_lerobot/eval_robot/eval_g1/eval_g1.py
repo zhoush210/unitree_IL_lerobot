@@ -29,7 +29,14 @@ from unitree_lerobot.eval_robot.eval_g1.image_server.image_client import ImageCl
 from unitree_lerobot.eval_robot.eval_g1.robot_control.robot_arm import G1_29_ArmController
 from unitree_lerobot.eval_robot.eval_g1.robot_control.robot_hand_unitree import Dex3_1_Controller, Gripper_Controller
 from unitree_lerobot.eval_robot.eval_g1.eval_real_config import EvalRealConfig
-
+import test_act
+import os
+import cv2
+from datetime import datetime
+import sys
+import select
+import tty
+import tqdm
 
 # copy from lerobot.common.robot_devices.control_utils import predict_action
 def predict_action(observation, policy, device, use_amp):
@@ -58,6 +65,44 @@ def predict_action(observation, policy, device, use_amp):
 
     return action
 
+def save_episode_video(frames, rollout_id, time_dir, base_dir="./eval_videos", fps=30):
+    """
+    将本次 rollout 的图片序列保存为 mp4 视频
+    frames: list[np.ndarray]
+    rollout_id: 当前 rollout 的编号
+    base_dir: 保存目录的父路径
+    fps: 视频帧率
+    """
+    if not frames:
+        print(f"[Warning] rollout {rollout_id} 没有采集到任何帧，视频未保存。")
+        return
+
+    save_dir = os.path.join(base_dir, time_dir)
+    os.makedirs(save_dir, exist_ok=True)
+
+    height, width = frames[0].shape[:2]
+    video_path = os.path.join(save_dir, f"rollout_{rollout_id}.mp4")
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
+
+    for frame in frames:
+        if frame.dtype != 'uint8':
+            frame = (frame * 255).astype('uint8')
+        if frame.shape[2] == 3:
+            out.write(frame)
+        else:
+            print("[Warning] 跳过一帧:不是3通道图像")
+
+    out.release()
+    print(f"[Info] Rollout {rollout_id} 视频已保存到 {video_path}")
+
+def get_key_nonblocking():
+    """非阻塞读取一个按键，没有输入则返回 None"""
+    dr, _, _ = select.select([sys.stdin], [], [], 0)
+    if dr:
+        return sys.stdin.read(1)  # 读取一个字符
+    return None
 
 def eval_policy(
     policy: torch.nn.Module,
@@ -70,103 +115,115 @@ def eval_policy(
     # Reset the policy and environments.
     policy.reset()
 
-    # image
-    img_config = {
-        'fps': 30,
-        'head_camera_type': 'opencv',
-        'head_camera_image_shape': [720, 1280],  # Head camera resolution
-        'head_camera_id_numbers': [0],
-        # 'wrist_camera_type': 'opencv',
-        # 'wrist_camera_image_shape': [720, 640],  # Wrist camera resolution
-        # 'wrist_camera_id_numbers': [2, 4],
-    }
-    ASPECT_RATIO_THRESHOLD = 2.0 # If the aspect ratio exceeds this value, it is considered binocular
-    if len(img_config['head_camera_id_numbers']) > 1 or (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
-        BINOCULAR = True
-    else:
-        BINOCULAR = False
-    if 'wrist_camera_type' in img_config:
-        WRIST = True
-    else:
-        WRIST = False
+    num_rollouts = 50
+    time_dir = datetime.now().strftime("%Y%m%d_%H%M%S")
+    for rollout_id in range(num_rollouts):
+        # image
+        img_config = {
+            'fps': 30,
+            'head_camera_type': 'opencv',
+            'head_camera_image_shape': [720, 1280],  # Head camera resolution
+            'head_camera_id_numbers': [0],
+            # 'wrist_camera_type': 'opencv',
+            # 'wrist_camera_image_shape': [720, 640],  # Wrist camera resolution
+            # 'wrist_camera_id_numbers': [2, 4],
+        }
+        ASPECT_RATIO_THRESHOLD = 2.0 # If the aspect ratio exceeds this value, it is considered binocular
+        if len(img_config['head_camera_id_numbers']) > 1 or (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
+            BINOCULAR = True
+        else:
+            BINOCULAR = False
+        if 'wrist_camera_type' in img_config:
+            WRIST = True
+        else:
+            WRIST = False
+        
+        if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
+            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
+        else:
+            tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1], 3)
+
+        tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
+        tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = tv_img_shm.buf)
+
+        if WRIST:
+            wrist_img_shape = (img_config['wrist_camera_image_shape'][0], img_config['wrist_camera_image_shape'][1] * 2, 3)
+            wrist_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(wrist_img_shape) * np.uint8().itemsize)
+            wrist_img_array = np.ndarray(wrist_img_shape, dtype = np.uint8, buffer = wrist_img_shm.buf)
+            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name, 
+                                    wrist_img_shape = wrist_img_shape, wrist_img_shm_name = wrist_img_shm.name)
+        else:
+            img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
+
+        image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
+        image_receive_thread.daemon = True
+        image_receive_thread.start()
     
-    if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
-        tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
-    else:
-        tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1], 3)
+        # init custom
+        # arm
+        test_act.ChannelFactoryInitialize(0)
+        custom = test_act.Custom()
+        custom.Init()
+        while not custom.first_update_low_state:
+            time.sleep(0.02)
+        # init pose
+        from_idx = dataset.episode_data_index["from"][0].item()
+        step = dataset[from_idx]
+        to_idx = dataset.episode_data_index["to"][0].item()
+        init_dual_arm_pose = step['observation.state'][:14].cpu().numpy()
+        dim = len(step['observation.state'])
+        if dim not in [14, 28]:
+            raise ValueError(f"Unsupported observation state dimension: {dim}. Expected 14 or 28.")
 
-    tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
-    tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = tv_img_shm.buf)
+        # hand
+        left_state_arr  = Array('d', 7, lock=False)
+        right_state_arr = Array('d', 7, lock=False)
+        action_arr = Array('d', 14, lock=False)   # 可选，用不到也可以 None
+        state_lock = Lock()
 
-    if WRIST:
-        wrist_img_shape = (img_config['wrist_camera_image_shape'][0], img_config['wrist_camera_image_shape'][1] * 2, 3)
-        wrist_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(wrist_img_shape) * np.uint8().itemsize)
-        wrist_img_array = np.ndarray(wrist_img_shape, dtype = np.uint8, buffer = wrist_img_shm.buf)
-        img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name, 
-                                 wrist_img_shape = wrist_img_shape, wrist_img_shm_name = wrist_img_shm.name)
-    else:
-        img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
+        hand_ctrl = Dex3_1_Controller(
+            right_hand_state_array  = right_state_arr,
+            left_hand_state_array  = left_state_arr,
+            dual_hand_action_array = action_arr,
+            fps        = 50.0,      # 匹配主控制频率
+            Unit_Test  = False      # 真实 DDS/真手爪
+        )
 
-    image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
-    image_receive_thread.daemon = True
-    image_receive_thread.start()
-
-    robot_config = {
-        'arm_type': 'g1',
-        'hand_type': "dex3",
-    }
-
-    # init pose
-    from_idx = dataset.episode_data_index["from"][0].item()
-    step = dataset[from_idx]
-    to_idx = dataset.episode_data_index["to"][0].item()
-
-    # arm
-    arm_ctrl = G1_29_ArmController()
-    init_left_arm_pose = step['observation.state'][:14].cpu().numpy()
-
-    # hand
-    if robot_config['hand_type'] == "dex3":
-        left_hand_array = Array('d', 7, lock = True)          # [input]
-        right_hand_array = Array('d', 7, lock = True)         # [input]
-        dual_hand_data_lock = Lock()
-        dual_hand_state_array = Array('d', 14, lock = False)  # [output] current left, right hand state(14) data.
-        dual_hand_action_array = Array('d', 14, lock = False) # [output] current left, right hand action(14) data.
-        hand_ctrl = Dex3_1_Controller(left_hand_array, right_hand_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array)
-        init_left_hand_pose = step['observation.state'][14:21].cpu().numpy()
-        init_right_hand_pose = step['observation.state'][21:].cpu().numpy()
-
-    elif robot_config['hand_type'] == "gripper":
-        left_hand_array = Array('d', 1, lock=True)             # [input]
-        right_hand_array = Array('d', 1, lock=True)            # [input]
-        dual_gripper_data_lock = Lock()
-        dual_gripper_state_array = Array('d', 2, lock=False)   # current left, right gripper state(2) data.
-        dual_gripper_action_array = Array('d', 2, lock=False)  # current left, right gripper action(2) data.
-        gripper_ctrl = Gripper_Controller(left_hand_array, right_hand_array, dual_gripper_data_lock, dual_gripper_state_array, dual_gripper_action_array)
-        init_left_hand_pose = step['observation.state'][14].cpu().numpy()
-        init_right_hand_pose = step['observation.state'][15].cpu().numpy()
-    else:
-        pass
-
-    #===============init robot=====================
-    user_input = input("Please enter the start signal (enter 's' to start the subsequent program):")
-    if user_input.lower() == 's':
-
+        #===============init robot=====================
         # "The initial positions of the robot's arm and fingers take the initial positions during data recording."
         print("init robot pose")
-        arm_ctrl.ctrl_dual_arm(init_left_arm_pose, np.zeros(14))
-        left_hand_array[:] = init_left_hand_pose
-        right_hand_array[:] = init_right_hand_pose
 
+        init_left_arm = np.zeros(7)
+        init_right_arm = np.array([0,0,-0.3,-0.2,0,0,0])  # Right arm joint positions
+        # init_left_arm = np.array([-0.1218879421015483, 0.1936419989831646, 0.17425482576988505, 0.7443733704658254, -0.14442309218100005, -0.8512422138131861, -0.3431697949914991])
+        # init_right_arm = np.array([-0.5557356425795662, -0.24198717407556442, 0.16197737375770552, 0.9128680627438711, -0.3724260954466061, -0.5365253098423672, -0.1674598238324641])
+        custom.init_armpos(init_left_arm, init_right_arm)
         print("wait robot to pose")
         time.sleep(1)
+        init_left_hand = np.zeros(7)
+        init_right_hand = np.zeros(7)
+        # init_left_hand = np.array([-0.9206724696209045, 0.5992037963321957, 0.3267422976110949, -0.022891257938381884, -0.09687889165773123, -0.021911120791004147, -0.059875848573434705])
+        # init_right_hand = np.array([-0.8140116822994757, -0.7375885831248487, -0.08884019141664193, 0.21725622993157398, 0.6336620483743846, 0.30790616123599096, 0.4807725104665246])
+        hand_ctrl.ctrl_dual_hand(init_left_hand,  init_right_hand)
+        time.sleep(1)
 
-        frequency = 50.0
+        frequency = 30.0
 
-        while True:
-
+        tty.setcbreak(sys.stdin.fileno())
+        print("按回车键开始推理，按 's' 键结束推理")
+        input()
+        frames = []
+        max_step = 500
+        for i in tqdm.tqdm(range(max_step)):
+            key = get_key_nonblocking()
+            if key == 's':
+                        print("检测到按键 's'，退出循环")
+                        break
+            
+            start_time = time.time()  # 记录开始时间
             # Get images
             current_tv_image = tv_img_array.copy()
+            frames.append(current_tv_image.copy())
             current_wrist_image = wrist_img_array.copy() if WRIST else None
 
             # Assign image data
@@ -185,18 +242,15 @@ def eval_policy(
             }
 
             # get current state data.
-            current_lr_arm_q  = arm_ctrl.get_current_dual_arm_q()
-            # dex hand or gripper
-            if robot_config['hand_type'] == "dex3":
-                with dual_hand_data_lock:
-                    left_hand_state = dual_hand_state_array[:7]
-                    right_hand_state = dual_hand_state_array[-7:]
-            elif robot_config['hand_type'] == "gripper":
-                with dual_gripper_data_lock:
-                    left_hand_state = [dual_gripper_state_array[1]]
-                    right_hand_state = [dual_gripper_state_array[0]]
-            
-            observation["observation.state"] = torch.from_numpy(np.concatenate((current_lr_arm_q, left_hand_state, right_hand_state), axis=0)).float()
+            current_pos = [custom.low_state.motor_state[j].q for j in custom.arm_joints] # left_arm, right_arm, waist
+            left_arm_pos = current_pos[0:7]  # Left arm joint positions
+            right_arm_pos = current_pos[7:14]  # Right arm joint positions
+            left_hand_state = np.array(left_state_arr[:])
+            right_hand_state = np.array(right_state_arr[:])
+            if dim == 28: # 双臂双手
+                observation["observation.state"] = torch.from_numpy(np.concatenate((left_arm_pos, right_arm_pos, left_hand_state, right_hand_state), axis=0)).float()
+            elif dim == 14: # 右臂右手
+                observation["observation.state"] = torch.from_numpy(np.concatenate((right_arm_pos, right_hand_state), axis=0)).float()
 
             observation = {
                 key: observation[key].to(device, non_blocking=device.type == "cuda") for key in observation
@@ -206,18 +260,53 @@ def eval_policy(
                 observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
             )
             action = action.cpu().numpy()
-            
-            # exec action
-            arm_ctrl.ctrl_dual_arm(action[:14], np.zeros(14))
-            if robot_config['hand_type'] == "dex3":
-                left_hand_array[:] = action[14:21]
-                right_hand_array[:] = action[21:]
-            elif robot_config['hand_type'] == "gripper":
-                left_hand_array[:] = action[14]
-                right_hand_array[:] = action[15]
-        
-            time.sleep(1/frequency)
+            state = observation["observation.state"].cpu().numpy()
 
+            # 平滑
+            if i == 0:
+                # 初始位置
+                if dim == 28:
+                    prev_arm_action = np.concatenate([init_left_arm, init_right_arm])
+                    prev_hand_action = np.concatenate([init_left_hand, init_right_hand])
+                elif dim == 14:
+                    prev_arm_action = init_right_arm
+                    prev_hand_action = init_right_hand
+                smoothed_arm = prev_arm_action
+                smoothed_hand = prev_hand_action
+            else:
+                alpha = 0.8 # 平滑系数
+                if dim == 28:
+                    smoothed_arm = alpha * prev_arm_action + (1-alpha) * action[:14]
+                    smoothed_hand = alpha * prev_hand_action + (1-alpha) * action[14:]
+                elif dim == 14:
+                    smoothed_arm = alpha * prev_arm_action + (1-alpha) * action[:7]
+                    smoothed_hand = alpha * prev_hand_action + (1-alpha) * action[7:]
+                prev_arm_action = smoothed_arm
+                prev_hand_action = smoothed_hand
+
+            # 控制
+            if dim == 28: # 双臂双手
+                target_qpos = np.concatenate([smoothed_arm, np.zeros(3)], axis=0)  # 双臂控制
+                custom.set_arm_pose(target_qpos, enable_sdk=True)
+                hand_ctrl.ctrl_dual_hand(smoothed_hand[:7], smoothed_hand[7:])  # 双手控制
+            elif dim == 14: # 右臂右手
+                target_qpos = np.concatenate([init_left_arm, smoothed_arm, np.zeros(3)], axis=0)  # 右臂控制
+                custom.set_arm_pose(target_qpos, enable_sdk=True)
+                hand_ctrl.ctrl_dual_hand(init_left_hand, smoothed_hand)  # 右手控制
+
+            # 精确的时间控制 - 和imitate_episodes_g1.py完全一致
+            current_time = time.time()
+            time_elapsed = current_time - start_time
+            sleep_time = max(0, (1 / float(frequency)) - time_elapsed)
+            time.sleep(sleep_time)
+
+        save_episode_video(frames, rollout_id, time_dir)
+        tv_img_shm.close()
+        tv_img_shm.unlink()
+        if WRIST:
+            wrist_img_shm.close()
+            wrist_img_shm.unlink()
+        print("End of eval_policy")
 
 @parser.wrap()
 def eval_main(cfg: EvalRealConfig):

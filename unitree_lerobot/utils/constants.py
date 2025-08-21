@@ -132,10 +132,36 @@ G1_DEX3_CONFIG = RobotConfig(
     json_action_data_name = ['left_arm', 'right_arm', 'left_hand', 'right_hand']
 )
 
+G1_DEX3_RIGHT_ARM_CONFIG = RobotConfig(
+    motors=[
+        "kRightShoulderPitch",
+        "kRightShoulderRoll",
+        "kRightShoulderYaw",
+        "kRightElbow",
+        "kRightWristRoll",
+        "kRightWristPitch",
+        "kRightWristYaw",
+        "kRightHandThumb0",
+        "kRightHandThumb1",
+        "kRightHandThumb2",
+        "kRightHandIndex0",
+        "kRightHandIndex1",
+        "kRightHandMiddle0",
+        "kRightHandMiddle1",
+    ],
+    cameras=[
+        "cam_left_high",
+    ],
+    camera_to_image_key = {'color_0': 'cam_left_high'},
+    json_state_data_name = ['right_arm', 'right_hand'],
+    json_action_data_name = ['right_arm', 'right_hand']
+)
+
 
 ROBOT_CONFIGS = {
     "Unitree_Z1_Single": Z1_SINGLE_CONFIG,
     "Unitree_Z1_Dual": Z1_CONFIG,
     "Unitree_G1_Gripper": G1_GRIPPER_CONFIG,
     "Unitree_G1_Dex3": G1_DEX3_CONFIG,
+    "Unitree_G1_Dex3_Right_Arm": G1_DEX3_RIGHT_ARM_CONFIG
 }
